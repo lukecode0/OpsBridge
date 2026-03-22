@@ -165,6 +165,56 @@
         color: var(--muted);
         line-height: 1.65;
       }
+
+      .demo-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      @media (min-width: 860px) {
+        .demo-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .demo-card {
+        display: grid;
+        gap: 0.8rem;
+        align-content: start;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .demo-card h2 {
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .demo-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .tag-row {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.28rem 0.7rem;
+        background: #f4e6d3;
+        color: var(--ink);
+        font-size: 0.88rem;
+      }
     </style>
   </head>
   <body>
@@ -255,6 +305,59 @@
           <li>Intentional browser failures fail once, then succeed when retried and processed again.</li>
           <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>
         </ul>
+      </section>
+
+      <section class="panel" style="margin-top: 1.5rem;">
+        <p class="eyebrow">Guided Demo</p>
+        <p class="lede">
+          Use these one-click samples to walk through the strongest browser demo paths without typing request data manually.
+        </p>
+        <div class="demo-grid">
+          <article class="demo-card">
+            <div>
+              <h2>Normal Email Intake</h2>
+              <p>Creates a straightforward success path for the mocked email adapter.</p>
+            </div>
+            <div class="tag-row">
+              <span class="tag">Email</span>
+              <span class="tag">Success</span>
+            </div>
+            <form action="/intake/demo" method="post">
+              <input type="hidden" name="sample_id" value="normal-email">
+              <button class="button" type="submit">Create Sample Request</button>
+            </form>
+          </article>
+
+          <article class="demo-card">
+            <div>
+              <h2>Fail Once Then Retry</h2>
+              <p>Creates a request that fails on first processing, then succeeds after a retry.</p>
+            </div>
+            <div class="tag-row">
+              <span class="tag">Slack</span>
+              <span class="tag">Retry</span>
+            </div>
+            <form action="/intake/demo" method="post">
+              <input type="hidden" name="sample_id" value="fail-once-slack">
+              <button class="button" type="submit">Create Sample Request</button>
+            </form>
+          </article>
+
+          <article class="demo-card">
+            <div>
+              <h2>Priority Slack Routing</h2>
+              <p>Creates an urgent Slack-bound request to show channel-specific delivery activity.</p>
+            </div>
+            <div class="tag-row">
+              <span class="tag">Slack</span>
+              <span class="tag">Priority</span>
+            </div>
+            <form action="/intake/demo" method="post">
+              <input type="hidden" name="sample_id" value="priority-slack">
+              <button class="button" type="submit">Create Sample Request</button>
+            </form>
+          </article>
+        </div>
       </section>
     </main>
   </body>

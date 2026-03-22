@@ -11,6 +11,8 @@ def test_public_intake_page_renders() -> None:
     assert response.status_code == 200
     assert "Submit an inbound request." in response.text
     assert "Open Admin Timeline" in response.text
+    assert "Guided Demo" in response.text
+    assert "Fail Once Then Retry" in response.text
 
 
 def test_browser_submission_redirects_and_shows_admin_entry() -> None:
@@ -37,6 +39,25 @@ def test_browser_submission_redirects_and_shows_admin_entry() -> None:
     assert "Inbound requests recorded in this demo session." in audit.text
     assert "external_id: browser-1" in audit.text
     assert "latest status: pending" in audit.text
+
+
+def test_guided_demo_sample_creates_request() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    response = client.post(
+        "/intake/demo",
+        data={"sample_id": "fail-once-slack"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Request fail_once_slack_001 accepted." in response.text
+
+    stored_request = app.state.intake_repository.requests[0]
+    assert stored_request.external_id == "fail_once_slack_001"
+    assert stored_request.payload["channel"] == "slack"
+    assert stored_request.payload["opsbridge_failure_mode"] == "fail_once"
 
 
 def test_browser_admin_actions_work_without_htmx() -> None:

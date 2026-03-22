@@ -17,6 +17,31 @@ from app.domain.intake import (
 )
 
 
+GUIDED_DEMO_SAMPLES: dict[str, dict[str, Any]] = {
+    "normal-email": {
+        "label": "Normal Email Intake",
+        "source": "guided-demo",
+        "channel": "email",
+        "message": "New customer intake received through the browser demo.",
+        "metadata": {"priority": "normal", "customer_tier": "standard"},
+    },
+    "fail-once-slack": {
+        "label": "Fail Once Then Retry",
+        "source": "guided-demo",
+        "channel": "slack",
+        "message": "Escalation event that intentionally fails once for retry demonstration.",
+        "metadata": {"priority": "high", "opsbridge_failure_mode": "fail_once"},
+    },
+    "priority-slack": {
+        "label": "Priority Slack Routing",
+        "source": "guided-demo",
+        "channel": "slack",
+        "message": "High-priority event routed to the Slack adapter.",
+        "metadata": {"priority": "urgent", "team": "operations"},
+    },
+}
+
+
 class IntakePayload(BaseModel):
     source: str
     external_id: str
@@ -103,6 +128,34 @@ def install_routes(app: FastAPI) -> None:
                 url=f"/?error=duplicate-id&duplicate_id={external_id}",
                 status_code=303,
             )
+        return RedirectResponse(url=f"/?submitted=1&submitted_id={external_id}", status_code=303)
+
+    @app.post("/intake/demo")
+    async def submit_guided_demo(request: Request):
+        form = await request.form()
+        sample_id = str(form.get("sample_id") or "").strip()
+        sample = GUIDED_DEMO_SAMPLES.get(sample_id)
+        if sample is None:
+            raise HTTPException(status_code=404, detail="Unknown demo sample.")
+
+        repository = request.app.state.intake_repository
+        external_id = _build_demo_external_id(repository.list_requests(), sample_id)
+        payload = {
+            "message": sample["message"],
+            "channel": sample["channel"],
+            **sample["metadata"],
+        }
+        service = IntakeService(
+            repository=repository,
+            jobs=request.app.state.job_dispatcher,
+        )
+        service.submit(
+            IntakeRequest(
+                source=sample["source"],
+                external_id=external_id,
+                payload=payload,
+            )
+        )
         return RedirectResponse(url=f"/?submitted=1&submitted_id={external_id}", status_code=303)
 
     @app.post("/admin/jobs/process")
@@ -312,6 +365,12 @@ def _build_request_detail_context(request: Request, request_id: str) -> dict[str
             latest_attempt=latest_attempt,
         )
     }
+
+
+def _build_demo_external_id(existing_requests: list[Any], sample_id: str) -> str:
+    prefix = sample_id.replace("-", "_")
+    sample_count = sum(1 for request in existing_requests if request.external_id.startswith(prefix))
+    return f"{prefix}_{sample_count + 1:03d}"
 
 
 def _build_system_context(request: Request) -> dict[str, Any]:
