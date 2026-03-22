@@ -23,3 +23,14 @@ class QueueHealthSummary:
     retried_requests: int
     recovered_after_retry_requests: int
     active_filters: bool
+
+
+@dataclass(frozen=True)
+class DeliveryActivityEntry:
+    request_id: str
+    external_id: str
+    channel: str
+    provider: str
+    delivery_id: str
+    attempt_id: str
+    created_at: str

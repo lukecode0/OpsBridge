@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
-from app.domain.admin import AuditEntry, QueueHealthSummary
+from app.domain.admin import AuditEntry, DeliveryActivityEntry, QueueHealthSummary
 from app.domain.intake import (
     DuplicateRequestIdentifierError,
     IntakeRequest,
@@ -205,6 +205,16 @@ def install_routes(app: FastAPI) -> None:
             context=context,
         )
 
+    @app.get("/admin/delivery-history")
+    def admin_delivery_history(request: Request):
+        context = _build_delivery_history_context(request)
+        context["current_page"] = "delivery_history"
+        return request.app.state.templates.TemplateResponse(
+            request=request,
+            name="admin/delivery_history.html",
+            context=context,
+        )
+
 
 def _build_audit_context(request: Request) -> dict[str, Any]:
     repository = request.app.state.intake_repository
@@ -323,4 +333,41 @@ def _build_system_context(request: Request) -> dict[str, Any]:
                 "calls": len(gateway.slack_gateway.calls),
             },
         ],
+    }
+
+
+def _build_delivery_history_context(request: Request) -> dict[str, Any]:
+    repository = request.app.state.intake_repository
+    successful_events = [
+        event for event in repository.events if event.event_type == "delivery.succeeded"
+    ]
+    recent_activity: list[DeliveryActivityEntry] = []
+    grouped_counts: dict[tuple[str, str], int] = {}
+
+    for event in reversed(successful_events):
+        stored_request = repository.get_request(event.request_id)
+        channel = str(event.payload.get("channel", "unknown"))
+        provider = str(event.payload.get("provider", "unknown"))
+        grouped_counts[(channel, provider)] = grouped_counts.get((channel, provider), 0) + 1
+        recent_activity.append(
+            DeliveryActivityEntry(
+                request_id=stored_request.request_id,
+                external_id=stored_request.external_id,
+                channel=channel,
+                provider=provider,
+                delivery_id=str(event.payload.get("delivery_id", "")),
+                attempt_id=str(event.payload.get("attempt_id", "")),
+                created_at=event.created_at.isoformat(),
+            )
+        )
+
+    grouped_activity = [
+        {"channel": channel, "provider": provider, "count": count}
+        for (channel, provider), count in sorted(grouped_counts.items())
+    ]
+
+    return {
+        "recent_activity": recent_activity,
+        "grouped_activity": grouped_activity,
+        "total_deliveries": len(successful_events),
     }
