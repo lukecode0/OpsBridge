@@ -166,6 +166,41 @@ class RetryService:
         return new_attempt
 
 
+class ReplayService:
+    def __init__(self, repository: IntakeRepository, jobs: JobDispatcher) -> None:
+        self.repository = repository
+        self.jobs = jobs
+
+    def replay_request(self, request_id: str) -> tuple[EventRecord, DeliveryAttempt]:
+        stored_request = self.repository.get_request(request_id)
+        latest_attempt = self.repository.get_latest_attempt_for_request(request_id)
+        now = datetime.now(UTC)
+        replay_event = EventRecord(
+            event_id=f"evt_{uuid4().hex[:12]}",
+            request_id=stored_request.request_id,
+            event_type="intake.replayed",
+            payload={
+                "external_id": stored_request.external_id,
+                "source": stored_request.source,
+                "replayed_from_attempt_id": latest_attempt.attempt_id,
+            },
+            created_at=now,
+        )
+        replay_attempt = DeliveryAttempt(
+            attempt_id=f"att_{uuid4().hex[:12]}",
+            request_id=stored_request.request_id,
+            target="process_intake",
+            status="pending",
+            created_at=now,
+            attempt_number=latest_attempt.attempt_number + 1,
+            previous_attempt_id=latest_attempt.attempt_id,
+        )
+        self.repository.save_event(replay_event)
+        self.repository.save_delivery_attempt(replay_attempt)
+        self.jobs.enqueue("process_intake", {"request_id": stored_request.request_id})
+        return replay_event, replay_attempt
+
+
 class ProcessingResult:
     def __init__(self, attempt: DeliveryAttempt, event: EventRecord) -> None:
         self.attempt = attempt

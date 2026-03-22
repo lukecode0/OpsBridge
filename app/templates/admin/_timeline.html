@@ -128,6 +128,15 @@
         <p class="section-title">Actions</p>
         <div class="meta">
           <a class="pill" href="/admin/requests/{{ entry.request.request_id }}">Open Request Detail</a>
+          <form
+            action="/admin/requests/{{ entry.request.request_id }}/replay"
+            method="post"
+            hx-post="/admin/requests/{{ entry.request.request_id }}/replay"
+            hx-target="#audit-content"
+            hx-swap="innerHTML"
+          >
+            <button class="pill" type="submit">Replay Original Event</button>
+          </form>
         </div>
 
         <p class="section-title">Event History</p>

@@ -12,6 +12,7 @@ from app.domain.intake import (
     IntakeRequest,
     IntakeService,
     JobRunner,
+    ReplayService,
     RetryService,
 )
 
@@ -140,6 +141,24 @@ def install_routes(app: FastAPI) -> None:
         if request_id:
             return RedirectResponse(url=f"/admin/requests/{request_id}", status_code=303)
         return RedirectResponse(url="/admin/audit", status_code=303)
+
+    @app.post("/admin/requests/{request_id}/replay")
+    def replay_request(request_id: str, request: Request):
+        service = ReplayService(
+            repository=request.app.state.intake_repository,
+            jobs=request.app.state.job_dispatcher,
+        )
+        service.replay_request(request_id)
+
+        if request.headers.get("hx-request") == "true":
+            context = _build_audit_context(request)
+            return request.app.state.templates.TemplateResponse(
+                request=request,
+                name="admin/_audit_content.html",
+                context=context,
+            )
+
+        return RedirectResponse(url=f"/admin/requests/{request_id}", status_code=303)
 
     @app.get("/admin/audit")
     def admin_audit(request: Request):

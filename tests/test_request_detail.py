@@ -58,3 +58,30 @@ def test_request_detail_page_supports_local_process_flow() -> None:
     assert response.status_code == 200
     assert request_id in response.text
     assert "latest status: succeeded" in response.text
+
+
+def test_request_detail_page_supports_replay_flow() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    client.post(
+        "/intake",
+        data={
+            "source": "web-form",
+            "external_id": "detail-replay",
+            "message": "Replay me",
+            "metadata_json": "{}",
+        },
+    )
+    client.post("/admin/jobs/process")
+    request_id = app.state.intake_repository.requests[0].request_id
+
+    replay = client.post(
+        f"/admin/requests/{request_id}/replay",
+        follow_redirects=True,
+    )
+
+    assert replay.status_code == 200
+    assert "Replay Original Intake" in replay.text
+    assert "intake.replayed" in replay.text
+    assert "attempt 2 is pending" in replay.text

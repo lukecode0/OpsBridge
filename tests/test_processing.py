@@ -1,4 +1,4 @@
-from app.domain.intake import IntakeRequest, IntakeService, JobRunner, RetryService
+from app.domain.intake import IntakeRequest, IntakeService, JobRunner, ReplayService, RetryService
 from app.services.jobs import RecordedJobDispatcher
 from app.services.repository import InMemoryIntakeRepository
 
@@ -67,3 +67,23 @@ def test_job_runner_can_fail_once_then_succeed_on_retry() -> None:
     processed_retry = repository.get_delivery_attempt(retry_attempt.attempt_id)
     assert processed_retry.status == "succeeded"
     assert repository.events[-1].event_type == "delivery.succeeded"
+
+
+def test_replay_request_records_replay_event_and_new_attempt() -> None:
+    repository = InMemoryIntakeRepository()
+    jobs = RecordedJobDispatcher()
+    service = IntakeService(repository, jobs)
+    result = service.submit(
+        IntakeRequest(source="webhook", external_id="replay-1", payload={"message": "hello"})
+    )
+    JobRunner(repository, jobs).process_all()
+
+    replay_event, replay_attempt = ReplayService(repository, jobs).replay_request(
+        result.request.request_id
+    )
+
+    assert replay_event.event_type == "intake.replayed"
+    assert replay_event.payload["replayed_from_attempt_id"] == result.delivery_attempt.attempt_id
+    assert replay_attempt.attempt_number == 2
+    assert replay_attempt.previous_attempt_id == result.delivery_attempt.attempt_id
+    assert replay_attempt.status == "pending"
