@@ -195,6 +195,16 @@ def install_routes(app: FastAPI) -> None:
             context=context,
         )
 
+    @app.get("/admin/system")
+    def admin_system_settings(request: Request):
+        context = _build_system_context(request)
+        context["current_page"] = "system"
+        return request.app.state.templates.TemplateResponse(
+            request=request,
+            name="admin/system.html",
+            context=context,
+        )
+
 
 def _build_audit_context(request: Request) -> dict[str, Any]:
     repository = request.app.state.intake_repository
@@ -291,4 +301,26 @@ def _build_request_detail_context(request: Request, request_id: str) -> dict[str
             delivery_attempts=attempts,
             latest_attempt=latest_attempt,
         )
+    }
+
+
+def _build_system_context(request: Request) -> dict[str, Any]:
+    settings = request.app.state.settings
+    gateway = request.app.state.delivery_gateway
+    return {
+        "settings": settings,
+        "integration_status": [
+            {
+                "channel": "email",
+                "provider": gateway.email_gateway.provider_name,
+                "enabled": "email" in settings.enabled_channels,
+                "calls": len(gateway.email_gateway.calls),
+            },
+            {
+                "channel": "slack",
+                "provider": gateway.slack_gateway.provider_name,
+                "enabled": "slack" in settings.enabled_channels,
+                "calls": len(gateway.slack_gateway.calls),
+            },
+        ],
     }
