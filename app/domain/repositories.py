@@ -37,3 +37,6 @@ class IntakeRepository(Protocol):
 
     def request_identifier_in_use(self, identifier: str) -> bool:
         ...
+
+    def reset(self) -> None:
+        ...

@@ -429,6 +429,7 @@ def _build_system_context(request: Request) -> dict[str, Any]:
     gateway = request.app.state.delivery_gateway
     return {
         "settings": settings,
+        "persistence_status": request.app.state.persistence_status,
         "integration_status": [
             {
                 "channel": "email",

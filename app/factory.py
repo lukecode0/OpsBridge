@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
-from app.persistence.in_memory import InMemoryIntakeRepository
+from app.persistence.factory import build_repository
 from app.services.integrations import (
     IntegrationRouter,
     RecordedEmailGateway,
@@ -16,7 +16,9 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title=settings.app_name)
     app.state.settings = settings
-    app.state.intake_repository = InMemoryIntakeRepository()
+    repository, persistence_status = build_repository(settings)
+    app.state.intake_repository = repository
+    app.state.persistence_status = persistence_status
     app.state.job_dispatcher = RecordedJobDispatcher()
     app.state.delivery_gateway = IntegrationRouter(
         email_gateway=RecordedEmailGateway(

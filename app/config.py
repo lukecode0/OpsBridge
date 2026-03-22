@@ -9,6 +9,8 @@ class Settings:
     delivery_mode: str = "mock"
     default_channel: str = "email"
     enabled_channels: tuple[str, ...] = ("email", "slack")
+    persistence_backend: str = "in_memory"
+    database_url: str | None = None
 
 
 def get_settings() -> Settings:
@@ -31,4 +33,9 @@ def get_settings() -> Settings:
         delivery_mode=os.getenv("OPSBRIDGE_DELIVERY_MODE", "mock").strip().lower() or "mock",
         default_channel=default_channel,
         enabled_channels=enabled_channels,
+        persistence_backend=(
+            os.getenv("OPSBRIDGE_PERSISTENCE_BACKEND", "in_memory").strip().lower()
+            or "in_memory"
+        ),
+        database_url=os.getenv("OPSBRIDGE_DATABASE_URL") or None,
     )

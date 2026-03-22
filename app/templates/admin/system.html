@@ -47,6 +47,11 @@
           <p><span class="mono">OPSBRIDGE_ENV</span>: {{ settings.environment }}</p>
           <p><span class="mono">OPSBRIDGE_DELIVERY_MODE</span>: {{ settings.delivery_mode }}</p>
           <p><span class="mono">OPSBRIDGE_DEFAULT_CHANNEL</span>: {{ settings.default_channel }}</p>
+          <p><span class="mono">OPSBRIDGE_PERSISTENCE_BACKEND</span>: {{ settings.persistence_backend }}</p>
+          <p>
+            <span class="mono">OPSBRIDGE_DATABASE_URL</span>:
+            {% if persistence_status.database_url_configured %}configured{% else %}not configured{% endif %}
+          </p>
           <p>
             <span class="mono">OPSBRIDGE_ENABLED_CHANNELS</span>:
             {{ settings.enabled_channels|join(", ") }}
@@ -60,10 +65,21 @@
             like a future environment-driven production setup.
           </p>
           <p>
-            This is the seam where real provider credentials or deployment-specific channel policies would
-            later be introduced.
+            Persistence now follows the same approach: in-memory remains the safe default, while a
+            SQLAlchemy-backed database path can be enabled explicitly without removing the fallback mode.
           </p>
         </article>
+      </section>
+
+      <section class="panel" style="margin-top: 1rem;">
+        <h2>Persistence Status</h2>
+        <p><span class="mono">requested</span>: {{ persistence_status.requested_backend }}</p>
+        <p><span class="mono">active</span>: {{ persistence_status.active_backend }}</p>
+        {% if persistence_status.fallback_reason %}
+          <p><span class="mono">fallback</span>: {{ persistence_status.fallback_reason }}</p>
+        {% else %}
+          <p>The currently requested persistence backend is active.</p>
+        {% endif %}
       </section>
 
       <section class="panel" style="margin-top: 1rem;">

@@ -1,4 +1,5 @@
 from app.config import get_settings
+from app.factory import create_app
 from app.services.integrations import IntegrationRouter, RecordedEmailGateway, RecordedSlackGateway
 from app.domain.intake import IntakeRequest, IntakeService, JobRunner
 from app.persistence.in_memory import InMemoryIntakeRepository
@@ -15,6 +16,16 @@ def test_get_settings_parses_delivery_configuration(monkeypatch) -> None:
     assert settings.delivery_mode == "stub"
     assert settings.default_channel == "slack"
     assert settings.enabled_channels == ("slack",)
+
+
+def test_get_settings_parses_persistence_configuration(monkeypatch) -> None:
+    monkeypatch.setenv("OPSBRIDGE_PERSISTENCE_BACKEND", "database")
+    monkeypatch.setenv("OPSBRIDGE_DATABASE_URL", "postgresql+psycopg://user:pass@localhost/opsbridge")
+
+    settings = get_settings()
+
+    assert settings.persistence_backend == "database"
+    assert settings.database_url == "postgresql+psycopg://user:pass@localhost/opsbridge"
 
 
 def test_integration_router_falls_back_to_default_channel_when_disabled() -> None:
@@ -42,3 +53,20 @@ def test_integration_router_falls_back_to_default_channel_when_disabled() -> Non
     ]
     assert gateway.slack_gateway.calls == []
     assert repository.events[-1].payload["channel"] == "email"
+
+
+def test_create_app_falls_back_to_in_memory_when_database_backend_fails(monkeypatch) -> None:
+    monkeypatch.setenv("OPSBRIDGE_PERSISTENCE_BACKEND", "database")
+    monkeypatch.setenv("OPSBRIDGE_DATABASE_URL", "postgresql+psycopg://localhost/opsbridge")
+
+    def fail_database_build(_settings):
+        raise RuntimeError("Database backend unavailable for test.")
+
+    monkeypatch.setattr("app.persistence.factory._build_database_repository", fail_database_build)
+
+    app = create_app()
+
+    assert app.state.persistence_status.requested_backend == "database"
+    assert app.state.persistence_status.active_backend == "in_memory"
+    assert app.state.persistence_status.fallback_reason == "Database backend unavailable for test."
+    assert isinstance(app.state.intake_repository, InMemoryIntakeRepository)
