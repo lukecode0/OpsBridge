@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpsBridge Request Detail</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16213e;
+        --muted: #5b6475;
+        --line: #d9dfeb;
+        --accent: #d96c06;
+        --accent-soft: #ffe5cc;
+        --bg: linear-gradient(135deg, #f7f2e8 0%, #e9f0f7 100%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+
+      main {
+        width: min(1000px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2.5rem 0 4rem;
+      }
+
+      .actions,
+      .meta {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: white;
+        padding: 0.8rem 1.1rem;
+        font: inherit;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .panel {
+        margin-top: 1.25rem;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 1.25rem;
+        box-shadow: 0 18px 40px rgba(22, 33, 62, 0.08);
+      }
+
+      .eyebrow {
+        margin: 0 0 0.4rem;
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: bold;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1, h2 {
+        margin: 0;
+      }
+
+      .lede {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .pill {
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        background: var(--accent-soft);
+        color: var(--ink);
+        font-size: 0.92rem;
+      }
+
+      .pill.status-pending {
+        background: #fff2cf;
+        color: #7d5600;
+      }
+
+      .pill.status-succeeded {
+        background: #dff4e7;
+        color: #1d6b3d;
+      }
+
+      .pill.status-failed {
+        background: #fde2df;
+        color: #8a2d25;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 0.85rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .timeline li {
+        border-left: 3px solid var(--line);
+        padding-left: 0.9rem;
+      }
+
+      pre {
+        margin: 0;
+        padding: 0.9rem;
+        overflow-x: auto;
+        border-radius: 14px;
+        background: #fff8ef;
+        border: 1px solid #f1dcc0;
+        font-size: 0.92rem;
+      }
+
+      .split {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      @media (max-width: 760px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="actions">
+        <a class="button" href="/admin/audit">Back To Audit</a>
+        <a class="button" href="/">Back To Homepage</a>
+        <form action="/admin/jobs/process?request_id={{ request_entry.request.request_id }}" method="post">
+          <button class="button" type="submit">Run Queued Jobs</button>
+        </form>
+        {% if request_entry.latest_attempt.status == "failed" %}
+          <form action="/admin/delivery-attempts/{{ request_entry.latest_attempt.attempt_id }}/retry?request_id={{ request_entry.request.request_id }}" method="post">
+            <button class="button" type="submit">Retry Latest Failed Attempt</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <section class="panel">
+        <p class="eyebrow">Request Detail</p>
+        <h1>{{ request_entry.request.request_id }}</h1>
+        <p class="lede">
+          Deep audit view for a single intake request, including event payloads, retry lineage, and local action controls.
+        </p>
+
+        <div class="meta">
+          <span class="pill">source: {{ request_entry.request.source }}</span>
+          <span class="pill">external_id: {{ request_entry.request.external_id }}</span>
+          <span class="pill status-{{ request_entry.latest_attempt.status }}">
+            latest status: {{ request_entry.latest_attempt.status }}
+          </span>
+          <span class="pill">{{ request_entry.delivery_attempts|length }} attempt(s)</span>
+          <span class="pill">{{ request_entry.events|length }} event(s)</span>
+        </div>
+      </section>
+
+      <div class="split">
+        <section class="panel">
+          <h2>Request Payload</h2>
+          <pre>{{ request_entry.request.payload }}</pre>
+        </section>
+
+        <section class="panel">
+          <h2>Latest Attempt</h2>
+          <ul class="timeline">
+            <li>
+              attempt {{ request_entry.latest_attempt.attempt_number }} is {{ request_entry.latest_attempt.status }}
+              {% if request_entry.latest_attempt.error_message %}
+                with {{ request_entry.latest_attempt.error_message }}
+              {% endif %}
+              {% if request_entry.latest_attempt.previous_attempt_id %}
+                from {{ request_entry.latest_attempt.previous_attempt_id }}
+              {% endif %}
+            </li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="panel">
+        <h2>Event Timeline</h2>
+        <ul class="timeline">
+          {% for event in request_entry.events %}
+            <li>
+              <strong>{{ event.event_type }}</strong> at {{ event.created_at.isoformat() }}
+              <pre>{{ event.payload }}</pre>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Delivery Attempts</h2>
+        <ul class="timeline">
+          {% for attempt in request_entry.delivery_attempts %}
+            <li>
+              <strong>{{ attempt.target }}</strong> attempt {{ attempt.attempt_number }} is {{ attempt.status }}
+              at {{ attempt.created_at.isoformat() }}
+              {% if attempt.completed_at %}
+                and completed at {{ attempt.completed_at.isoformat() }}
+              {% endif %}
+              {% if attempt.error_message %}
+                with {{ attempt.error_message }}
+              {% endif %}
+              {% if attempt.previous_attempt_id %}
+                from {{ attempt.previous_attempt_id }}
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

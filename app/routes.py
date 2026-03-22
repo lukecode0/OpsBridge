@@ -107,6 +107,9 @@ def install_routes(app: FastAPI) -> None:
         runner.process_all()
 
         if request.headers.get("hx-request") != "true":
+            request_id = request.query_params.get("request_id")
+            if request_id:
+                return RedirectResponse(url=f"/admin/requests/{request_id}", status_code=303)
             return RedirectResponse(url="/admin/audit", status_code=303)
 
         context = _build_audit_context(request)
@@ -132,6 +135,9 @@ def install_routes(app: FastAPI) -> None:
                 context=context,
             )
 
+        request_id = request.query_params.get("request_id")
+        if request_id:
+            return RedirectResponse(url=f"/admin/requests/{request_id}", status_code=303)
         return RedirectResponse(url="/admin/audit", status_code=303)
 
     @app.get("/admin/audit")
@@ -149,6 +155,15 @@ def install_routes(app: FastAPI) -> None:
         return request.app.state.templates.TemplateResponse(
             request=request,
             name="admin/_audit_content.html",
+            context=context,
+        )
+
+    @app.get("/admin/requests/{request_id}")
+    def admin_request_detail(request_id: str, request: Request):
+        context = _build_request_detail_context(request, request_id)
+        return request.app.state.templates.TemplateResponse(
+            request=request,
+            name="admin/request_detail.html",
             context=context,
         )
 
@@ -208,3 +223,19 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
     }
 
     return {"entries": entries, "q": query, "status": status, "summary": summary}
+
+
+def _build_request_detail_context(request: Request, request_id: str) -> dict[str, Any]:
+    repository = request.app.state.intake_repository
+    stored_request = repository.get_request(request_id)
+    events = repository.list_events_for_request(request_id)
+    attempts = repository.list_delivery_attempts_for_request(request_id)
+    latest_attempt = repository.get_latest_attempt_for_request(request_id)
+    return {
+        "request_entry": {
+            "request": stored_request,
+            "events": events,
+            "delivery_attempts": attempts,
+            "latest_attempt": latest_attempt,
+        }
+    }

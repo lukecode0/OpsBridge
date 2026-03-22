@@ -125,6 +125,11 @@
         <p class="section-title">Payload</p>
         <pre>{{ entry.request.payload }}</pre>
 
+        <p class="section-title">Actions</p>
+        <div class="meta">
+          <a class="pill" href="/admin/requests/{{ entry.request.request_id }}">Open Request Detail</a>
+        </div>
+
         <p class="section-title">Event History</p>
         <ul class="timeline">
           {% for event in entry.events %}
