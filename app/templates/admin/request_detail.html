@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% block title %}OpsBridge Request Detail{% endblock %}
+{% block title %}OpsBridge | Request Detail{% endblock %}
 
 {% block extra_styles %}
   .actions,
@@ -71,7 +71,7 @@
           <button class="button" type="submit">Run Queued Jobs</button>
         </form>
         <form action="/admin/requests/{{ request_entry.request.request_id }}/replay" method="post">
-          <button class="button" type="submit">Replay Original Intake</button>
+          <button class="button" type="submit">Replay Original Event</button>
         </form>
         {% if request_entry.latest_attempt.status == "failed" %}
           <form action="/admin/delivery-attempts/{{ request_entry.latest_attempt.attempt_id }}/retry?request_id={{ request_entry.request.request_id }}" method="post">

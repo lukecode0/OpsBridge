@@ -82,6 +82,6 @@ def test_request_detail_page_supports_replay_flow() -> None:
     )
 
     assert replay.status_code == 200
-    assert "Replay Original Intake" in replay.text
+    assert "Replay Original Event" in replay.text
     assert "intake.replayed" in replay.text
     assert "attempt 2 is pending" in replay.text
