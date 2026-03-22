@@ -123,12 +123,12 @@
 {% endblock %}
 
 {% block content %}
-  <section class="hero page-header">
+      <section class="hero page-header">
         <p class="eyebrow">Admin Console</p>
         <h1>Audit Timeline</h1>
         <p class="lede">
           Review inbound requests, the events they created, and the queued delivery attempts.
-          This page is server-rendered and works as normal HTML forms, with HTMX used only as a progressive enhancement.
+          This is the main operations surface for inspecting state transitions, intentional failures, retries, and replays.
         </p>
       </section>
 
@@ -161,7 +161,7 @@
         <form action="/admin/demo/reset" method="post">
           <button class="button" type="submit">Reset Demo State</button>
         </form>
-        <span class="hint">Future replay and retry controls will live alongside these records.</span>
+        <span class="hint">Use seed/reset to prepare a clean walkthrough before a portfolio demo.</span>
       </section>
       {% if demo_seeded %}
         <div class="notice">Showcase demo data has been seeded with browser-ready sample requests.</div>

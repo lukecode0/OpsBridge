@@ -47,6 +47,11 @@
         }
       }
 
+      .left-column {
+        display: grid;
+        gap: 1.5rem;
+      }
+
       .panel {
         background: rgba(255, 255, 255, 0.88);
         border: 1px solid var(--line);
@@ -75,6 +80,13 @@
         color: var(--muted);
         line-height: 1.65;
         font-size: 1.02rem;
+      }
+
+      .hero-points {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
       }
 
       .notice {
@@ -215,39 +227,70 @@
         color: var(--ink);
         font-size: 0.88rem;
       }
+
+      .demo-path {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(250, 243, 232, 0.94));
+      }
+
+      .demo-path ul {
+        margin-top: 0.35rem;
+      }
+
+      .section-spacer {
+        margin-top: 1.5rem;
+      }
     </style>
   </head>
   <body>
     <main>
       <div class="shell">
+        <div class="left-column">
+          <section class="panel">
+            <p class="eyebrow">OpsBridge Demo</p>
+            <h1>Submit an inbound request.</h1>
+            <p class="lede">
+              This is the public-facing side of OpsBridge. Create requests here, then switch to the admin
+              console to inspect the audit trail, process queued work, and demonstrate retry and replay flows.
+            </p>
+            <div class="hero-points">
+              <span class="tag">FastAPI</span>
+              <span class="tag">Server Rendered Admin</span>
+              <span class="tag">Retry + Replay</span>
+            </div>
+
+            {% if submitted %}
+              <div class="notice success">
+                Request {{ submitted_id }} accepted. Open the admin timeline to inspect and process it.
+              </div>
+            {% endif %}
+
+            {% if error == "invalid-json" %}
+              <div class="notice error">
+                Metadata JSON could not be parsed. Please correct it and try again.
+              </div>
+            {% endif %}
+
+            {% if error == "duplicate-id" %}
+              <div class="notice error">
+                Request {{ duplicate_id }} was not accepted because that identifier is already in use.
+              </div>
+            {% endif %}
+          </section>
+
+          <section class="panel demo-path">
+            <p class="eyebrow">Demo Path</p>
+            <ul>
+              <li>Submit one normal request and watch it move from pending to succeeded.</li>
+              <li>Choose Slack or Email to exercise different mocked outbound adapters.</li>
+              <li>Submit one intentional failure and use retry from the admin timeline.</li>
+              <li>Intentional browser failures fail once, then succeed when retried and processed again.</li>
+              <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>
+            </ul>
+          </section>
+        </div>
+
         <section class="panel">
-          <p class="eyebrow">OpsBridge Demo</p>
-          <h1>Submit an inbound request.</h1>
-          <p class="lede">
-            This simulates the public-facing side of OpsBridge. Submit a request here, then visit the
-            admin timeline to process it, inspect the audit trail, and retry intentional failures.
-          </p>
-
-          {% if submitted %}
-            <div class="notice success">
-              Request {{ submitted_id }} accepted. Open the admin timeline to inspect and process it.
-            </div>
-          {% endif %}
-
-          {% if error == "invalid-json" %}
-            <div class="notice error">
-              Metadata JSON could not be parsed. Please correct it and try again.
-            </div>
-          {% endif %}
-
-          {% if error == "duplicate-id" %}
-            <div class="notice error">
-              Request {{ duplicate_id }} was not accepted because that identifier is already in use.
-            </div>
-          {% endif %}
-        </section>
-
-        <section class="panel">
+          <p class="eyebrow">Manual Intake</p>
           <form action="/intake" method="post" class="form-grid">
             <label>
               Source
@@ -296,18 +339,7 @@
         </section>
       </div>
 
-      <section class="panel" style="margin-top: 1.5rem;">
-        <p class="eyebrow">Demo Path</p>
-        <ul>
-          <li>Submit one normal request and watch it move from pending to succeeded.</li>
-          <li>Choose Slack or Email to exercise different mocked outbound adapters.</li>
-          <li>Submit one intentionally failing request and use retry from the admin timeline.</li>
-          <li>Intentional browser failures fail once, then succeed when retried and processed again.</li>
-          <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>
-        </ul>
-      </section>
-
-      <section class="panel" style="margin-top: 1.5rem;">
+      <section class="panel section-spacer">
         <p class="eyebrow">Guided Demo</p>
         <p class="lede">
           Use these one-click samples to walk through the strongest browser demo paths without typing request data manually.
