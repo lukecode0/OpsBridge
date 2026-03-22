@@ -18,11 +18,11 @@ def test_intake_persists_records_and_enqueues_job() -> None:
 
     assert result.request.source == "slack"
     assert result.request.external_id == "abc-123"
-    assert result.request.payload == {"message": "hello"}
+    assert result.request.payload == {"message": "hello", "channel": "email"}
     assert result.event.request_id == result.request.request_id
     assert result.event.event_type == "intake.received"
     assert result.delivery_attempt.request_id == result.request.request_id
-    assert result.delivery_attempt.target == "process_intake"
+    assert result.delivery_attempt.target == "deliver_email"
     assert result.delivery_attempt.status == "pending"
 
     assert repository.requests == [result.request]

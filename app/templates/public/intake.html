@@ -215,6 +215,14 @@
             </label>
 
             <label>
+              Outbound Channel
+              <select name="channel">
+                <option value="email" selected>Email</option>
+                <option value="slack">Slack</option>
+              </select>
+            </label>
+
+            <label>
               Extra metadata as JSON
               <textarea name="metadata_json">{"priority": "normal"}</textarea>
             </label>
@@ -236,6 +244,7 @@
         <p class="eyebrow">Demo Path</p>
         <ul>
           <li>Submit one normal request and watch it move from pending to succeeded.</li>
+          <li>Choose Slack or Email to exercise different mocked outbound adapters.</li>
           <li>Submit one intentionally failing request and use retry from the admin timeline.</li>
           <li>Intentional browser failures fail once, then succeed when retried and processed again.</li>
           <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>

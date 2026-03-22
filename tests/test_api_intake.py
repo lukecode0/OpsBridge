@@ -30,7 +30,7 @@ def test_api_intake_persists_records_and_enqueues_job() -> None:
     assert len(repository.requests) == 1
     assert repository.requests[0].source == "slack"
     assert repository.requests[0].external_id == "abc-123"
-    assert repository.requests[0].payload == {"message": "hello"}
+    assert repository.requests[0].payload == {"message": "hello", "channel": "email"}
 
     assert len(repository.events) == 1
     assert repository.events[0].event_type == "intake.received"
@@ -38,6 +38,7 @@ def test_api_intake_persists_records_and_enqueues_job() -> None:
 
     assert len(repository.delivery_attempts) == 1
     assert repository.delivery_attempts[0].status == "pending"
+    assert repository.delivery_attempts[0].target == "deliver_email"
 
     assert app.state.job_dispatcher.calls == [
         ("process_intake", {"request_id": repository.requests[0].request_id})

@@ -1,4 +1,5 @@
 from app.domain.intake import IntakeRequest, IntakeService, JobRunner, RetryService
+from app.services.integrations import IntegrationRouter, RecordedEmailGateway, RecordedSlackGateway
 from app.services.jobs import RecordedJobDispatcher
 from app.services.repository import InMemoryIntakeRepository
 
@@ -6,6 +7,7 @@ from app.services.repository import InMemoryIntakeRepository
 def test_retry_attempt_tracks_previous_attempt_id() -> None:
     repository = InMemoryIntakeRepository()
     jobs = RecordedJobDispatcher()
+    gateway = IntegrationRouter(RecordedEmailGateway(), RecordedSlackGateway())
     service = IntakeService(repository, jobs)
     initial = service.submit(
         IntakeRequest(
@@ -15,7 +17,7 @@ def test_retry_attempt_tracks_previous_attempt_id() -> None:
         )
     )
 
-    JobRunner(repository, jobs).process_all()
+    JobRunner(repository, jobs, gateway).process_all()
     retry = RetryService(repository, jobs).retry_attempt(initial.delivery_attempt.attempt_id)
 
     assert retry.previous_attempt_id == initial.delivery_attempt.attempt_id

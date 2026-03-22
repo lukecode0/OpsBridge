@@ -14,6 +14,11 @@ class JobDispatcher(Protocol):
         ...
 
 
+class DeliveryGateway(Protocol):
+    def send(self, request: "StoredRequest", attempt: "DeliveryAttempt") -> Any:
+        ...
+
+
 @dataclass(frozen=True)
 class IntakeRequest:
     source: str
@@ -121,7 +126,7 @@ class IntakeService:
         delivery_attempt = DeliveryAttempt(
             attempt_id=f"att_{uuid4().hex[:12]}",
             request_id=stored_request.request_id,
-            target="process_intake",
+            target=f"deliver_{normalized['channel']}",
             status="pending",
             created_at=now,
         )
@@ -138,10 +143,14 @@ class IntakeService:
         )
 
     def _normalize(self, request: IntakeRequest) -> dict[str, Any]:
+        payload = dict(request.payload)
+        channel = str(payload.get("channel", "email")).strip().lower() or "email"
+        payload["channel"] = channel
         return {
             "source": request.source.strip().lower(),
             "external_id": request.external_id.strip(),
-            "payload": request.payload,
+            "payload": payload,
+            "channel": channel,
         }
 
 
@@ -208,9 +217,15 @@ class ProcessingResult:
 
 
 class JobRunner:
-    def __init__(self, repository: IntakeRepository, jobs: JobDispatcher) -> None:
+    def __init__(
+        self,
+        repository: IntakeRepository,
+        jobs: JobDispatcher,
+        delivery_gateway: DeliveryGateway,
+    ) -> None:
         self.repository = repository
         self.jobs = jobs
+        self.delivery_gateway = delivery_gateway
 
     def process_next(self) -> ProcessingResult | None:
         queued_job = self.jobs.dequeue()
@@ -235,6 +250,7 @@ class JobRunner:
                 "reason": "Intentional test failure",
             }
         else:
+            receipt = self.delivery_gateway.send(stored_request, attempt)
             updated_attempt = replace(
                 attempt,
                 status="succeeded",
@@ -242,7 +258,12 @@ class JobRunner:
                 error_message=None,
             )
             event_type = "delivery.succeeded"
-            event_payload = {"attempt_id": attempt.attempt_id}
+            event_payload = {
+                "attempt_id": attempt.attempt_id,
+                "channel": receipt.channel,
+                "provider": receipt.provider,
+                "delivery_id": receipt.delivery_id,
+            }
 
         self.repository.update_delivery_attempt(updated_attempt)
         event = EventRecord(

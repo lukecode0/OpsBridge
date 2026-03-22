@@ -67,7 +67,10 @@ def install_routes(app: FastAPI) -> None:
     @app.post("/intake")
     async def submit_public_intake(request: Request):
         form = await request.form()
-        payload = {"message": (form.get("message") or "").strip()}
+        payload = {
+            "message": (form.get("message") or "").strip(),
+            "channel": str(form.get("channel") or "email").strip().lower() or "email",
+        }
         force_failure = form.get("force_failure")
 
         metadata_raw = (form.get("metadata_json") or "").strip()
@@ -105,6 +108,7 @@ def install_routes(app: FastAPI) -> None:
         runner = JobRunner(
             repository=request.app.state.intake_repository,
             jobs=request.app.state.job_dispatcher,
+            delivery_gateway=request.app.state.delivery_gateway,
         )
         runner.process_all()
 
