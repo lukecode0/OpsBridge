@@ -64,7 +64,7 @@ def install_routes(app: FastAPI) -> None:
                 return RedirectResponse(url="/?error=invalid-json", status_code=303)
 
         if force_failure:
-            payload["opsbridge_outcome"] = "fail"
+            payload["opsbridge_failure_mode"] = "fail_once"
 
         service = IntakeService(
             repository=request.app.state.intake_repository,
@@ -136,9 +136,26 @@ def install_routes(app: FastAPI) -> None:
 
 def _build_audit_context(request: Request) -> dict[str, Any]:
     repository = request.app.state.intake_repository
+    query = request.query_params.get("q", "").strip().lower()
+    status = request.query_params.get("status", "").strip().lower()
     entries = []
 
     for stored_request in repository.list_requests():
+        latest_attempt = repository.get_latest_attempt_for_request(stored_request.request_id)
+        if status and latest_attempt.status != status:
+            continue
+
+        searchable = " ".join(
+            [
+                stored_request.request_id,
+                stored_request.source,
+                stored_request.external_id,
+                json.dumps(stored_request.payload, sort_keys=True),
+            ]
+        ).lower()
+        if query and query not in searchable:
+            continue
+
         entries.append(
             {
                 "request": stored_request,
@@ -146,10 +163,8 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
                 "delivery_attempts": repository.list_delivery_attempts_for_request(
                     stored_request.request_id
                 ),
-                "latest_attempt": repository.get_latest_attempt_for_request(
-                    stored_request.request_id
-                ),
+                "latest_attempt": latest_attempt,
             }
         )
 
-    return {"entries": entries}
+    return {"entries": entries, "q": query, "status": status}

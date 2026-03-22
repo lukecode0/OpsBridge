@@ -215,7 +215,7 @@
 
             <label class="checkbox">
               <input type="checkbox" name="force_failure" value="1">
-              Intentionally fail this request so the retry flow can be demonstrated
+              Intentionally fail the first processing attempt so the retry flow can be demonstrated
             </label>
 
             <div class="actions">
@@ -231,6 +231,7 @@
         <ul>
           <li>Submit one normal request and watch it move from pending to succeeded.</li>
           <li>Submit one intentionally failing request and use retry from the admin timeline.</li>
+          <li>Intentional browser failures fail once, then succeed when retried and processed again.</li>
           <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>
         </ul>
       </section>

@@ -68,3 +68,45 @@ def test_browser_admin_actions_work_without_htmx() -> None:
     assert retried.status_code == 200
     assert "attempt 2 is pending" in retried.text
     assert f"from {failed_attempt_id}" in retried.text
+
+    processed_retry = client.post("/admin/jobs/process", follow_redirects=True)
+
+    assert processed_retry.status_code == 200
+    assert "latest status: succeeded" in processed_retry.text
+    assert "attempt 2 is succeeded" in processed_retry.text
+
+
+def test_admin_audit_supports_search_and_status_filters() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    client.post(
+        "/intake",
+        data={
+            "source": "web-form",
+            "external_id": "find-me",
+            "message": "Normal request",
+            "metadata_json": "{}",
+        },
+    )
+    client.post(
+        "/intake",
+        data={
+            "source": "web-form",
+            "external_id": "fail-me",
+            "message": "Fail once request",
+            "metadata_json": "{}",
+            "force_failure": "1",
+        },
+    )
+    client.post("/admin/jobs/process")
+
+    failed_only = client.get("/admin/audit?status=failed")
+    assert failed_only.status_code == 200
+    assert "external_id: fail-me" in failed_only.text
+    assert "external_id: find-me" not in failed_only.text
+
+    searched = client.get("/admin/audit?q=find-me")
+    assert searched.status_code == 200
+    assert "external_id: find-me" in searched.text
+    assert "external_id: fail-me" not in searched.text

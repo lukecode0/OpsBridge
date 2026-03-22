@@ -43,3 +43,27 @@ def test_job_runner_can_fail_and_retry_attempts() -> None:
     assert retry_attempt.attempt_number == 2
     assert retry_attempt.status == "pending"
     assert repository.get_latest_attempt_for_request(result.request.request_id).attempt_id == retry_attempt.attempt_id
+
+
+def test_job_runner_can_fail_once_then_succeed_on_retry() -> None:
+    repository = InMemoryIntakeRepository()
+    jobs = RecordedJobDispatcher()
+    service = IntakeService(repository, jobs)
+    result = service.submit(
+        IntakeRequest(
+            source="webhook",
+            external_id="fail-once-1",
+            payload={"opsbridge_failure_mode": "fail_once"},
+        )
+    )
+
+    JobRunner(repository, jobs).process_all()
+    first_attempt = repository.get_delivery_attempt(result.delivery_attempt.attempt_id)
+    assert first_attempt.status == "failed"
+
+    retry_attempt = RetryService(repository, jobs).retry_attempt(first_attempt.attempt_id)
+    JobRunner(repository, jobs).process_all()
+
+    processed_retry = repository.get_delivery_attempt(retry_attempt.attempt_id)
+    assert processed_retry.status == "succeeded"
+    assert repository.events[-1].event_type == "delivery.succeeded"

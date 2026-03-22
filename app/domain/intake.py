@@ -81,6 +81,9 @@ class IntakeRepository(Protocol):
     def update_delivery_attempt(self, attempt: DeliveryAttempt) -> None:
         ...
 
+    def list_delivery_attempts_for_request(self, request_id: str) -> list[DeliveryAttempt]:
+        ...
+
 
 class IntakeService:
     def __init__(self, repository: IntakeRepository, jobs: JobDispatcher) -> None:
@@ -173,7 +176,7 @@ class JobRunner:
         attempt = self.repository.get_latest_attempt_for_request(request_id)
         completed_at = datetime.now(UTC)
 
-        if self._should_fail(stored_request):
+        if self._should_fail(stored_request, attempt):
             updated_attempt = replace(
                 attempt,
                 status="failed",
@@ -214,6 +217,17 @@ class JobRunner:
                 return results
             results.append(result)
 
-    def _should_fail(self, request: StoredRequest) -> bool:
-        value = request.payload.get("opsbridge_outcome")
-        return value == "fail"
+    def _should_fail(self, request: StoredRequest, attempt: DeliveryAttempt) -> bool:
+        outcome = request.payload.get("opsbridge_outcome")
+        if outcome == "fail":
+            return True
+
+        failure_mode = request.payload.get("opsbridge_failure_mode")
+        if failure_mode == "fail_once":
+            prior_attempts = self.repository.list_delivery_attempts_for_request(request.request_id)
+            prior_failures = [
+                prior for prior in prior_attempts if prior.attempt_id != attempt.attempt_id and prior.status == "failed"
+            ]
+            return not prior_failures
+
+        return False

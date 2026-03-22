@@ -66,7 +66,7 @@
         gap: 0.75rem;
         align-items: center;
         flex-wrap: wrap;
-        margin: 1.25rem 0 2rem;
+        margin: 1.25rem 0 1rem;
       }
 
       .button {
@@ -86,6 +86,29 @@
       .hint {
         color: var(--muted);
         font-size: 0.95rem;
+      }
+
+      .filters {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: 1.3fr 0.7fr auto;
+        margin-bottom: 2rem;
+      }
+
+      .filters input,
+      .filters select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.78rem 1rem;
+        font: inherit;
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      @media (max-width: 720px) {
+        .filters {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -126,6 +149,22 @@
         <a class="button" href="/">Open Public Intake</a>
         <span class="hint">Future replay and retry controls will live alongside these records.</span>
       </section>
+
+      <form class="filters" action="/admin/audit" method="get">
+        <input
+          type="search"
+          name="q"
+          value="{{ q }}"
+          placeholder="Search by request id, external id, source, or payload"
+        >
+        <select name="status">
+          <option value="" {% if not status %}selected{% endif %}>All statuses</option>
+          <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+          <option value="succeeded" {% if status == "succeeded" %}selected{% endif %}>Succeeded</option>
+          <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
+        </select>
+        <button class="button" type="submit">Apply Filters</button>
+      </form>
 
       <section id="timeline">
         {% include "admin/_timeline.html" %}
