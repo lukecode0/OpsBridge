@@ -21,11 +21,13 @@ def test_get_settings_parses_delivery_configuration(monkeypatch) -> None:
 def test_get_settings_parses_persistence_configuration(monkeypatch) -> None:
     monkeypatch.setenv("OPSBRIDGE_PERSISTENCE_BACKEND", "database")
     monkeypatch.setenv("OPSBRIDGE_DATABASE_URL", "postgresql+psycopg://user:pass@localhost/opsbridge")
+    monkeypatch.setenv("OPSBRIDGE_SQLITE_PATH", "./var/opsbridge-smoke.db")
 
     settings = get_settings()
 
     assert settings.persistence_backend == "database"
     assert settings.database_url == "postgresql+psycopg://user:pass@localhost/opsbridge"
+    assert settings.sqlite_path == "./var/opsbridge-smoke.db"
 
 
 def test_integration_router_falls_back_to_default_channel_when_disabled() -> None:
@@ -59,7 +61,7 @@ def test_create_app_falls_back_to_in_memory_when_database_backend_fails(monkeypa
     monkeypatch.setenv("OPSBRIDGE_PERSISTENCE_BACKEND", "database")
     monkeypatch.setenv("OPSBRIDGE_DATABASE_URL", "postgresql+psycopg://localhost/opsbridge")
 
-    def fail_database_build(_settings):
+    def fail_database_build(_database_url):
         raise RuntimeError("Database backend unavailable for test.")
 
     monkeypatch.setattr("app.persistence.factory._build_database_repository", fail_database_build)
@@ -69,4 +71,5 @@ def test_create_app_falls_back_to_in_memory_when_database_backend_fails(monkeypa
     assert app.state.persistence_status.requested_backend == "database"
     assert app.state.persistence_status.active_backend == "in_memory"
     assert app.state.persistence_status.fallback_reason == "Database backend unavailable for test."
+    assert app.state.persistence_status.database_driver == "postgresql+psycopg"
     assert isinstance(app.state.intake_repository, InMemoryIntakeRepository)

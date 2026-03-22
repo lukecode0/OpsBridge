@@ -11,6 +11,7 @@ class Settings:
     enabled_channels: tuple[str, ...] = ("email", "slack")
     persistence_backend: str = "in_memory"
     database_url: str | None = None
+    sqlite_path: str = "./opsbridge-dev.db"
 
 
 def get_settings() -> Settings:
@@ -38,4 +39,5 @@ def get_settings() -> Settings:
             or "in_memory"
         ),
         database_url=os.getenv("OPSBRIDGE_DATABASE_URL") or None,
+        sqlite_path=os.getenv("OPSBRIDGE_SQLITE_PATH", "./opsbridge-dev.db"),
     )

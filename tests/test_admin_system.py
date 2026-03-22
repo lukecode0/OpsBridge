@@ -13,6 +13,7 @@ def test_admin_system_page_renders_environment_and_adapter_status() -> None:
     assert "System Settings / Environment Info" in response.text
     assert "OPSBRIDGE_DELIVERY_MODE" in response.text
     assert "OPSBRIDGE_PERSISTENCE_BACKEND" in response.text
+    assert "OPSBRIDGE_SQLITE_PATH" in response.text
     assert "Persistence Status" in response.text
     assert "mock-email" in response.text
     assert "mock-slack" in response.text

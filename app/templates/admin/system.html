@@ -48,6 +48,7 @@
           <p><span class="mono">OPSBRIDGE_DELIVERY_MODE</span>: {{ settings.delivery_mode }}</p>
           <p><span class="mono">OPSBRIDGE_DEFAULT_CHANNEL</span>: {{ settings.default_channel }}</p>
           <p><span class="mono">OPSBRIDGE_PERSISTENCE_BACKEND</span>: {{ settings.persistence_backend }}</p>
+          <p><span class="mono">OPSBRIDGE_SQLITE_PATH</span>: {{ settings.sqlite_path }}</p>
           <p>
             <span class="mono">OPSBRIDGE_DATABASE_URL</span>:
             {% if persistence_status.database_url_configured %}configured{% else %}not configured{% endif %}
@@ -75,6 +76,7 @@
         <h2>Persistence Status</h2>
         <p><span class="mono">requested</span>: {{ persistence_status.requested_backend }}</p>
         <p><span class="mono">active</span>: {{ persistence_status.active_backend }}</p>
+        <p><span class="mono">driver</span>: {{ persistence_status.database_driver or "n/a" }}</p>
         {% if persistence_status.fallback_reason %}
           <p><span class="mono">fallback</span>: {{ persistence_status.fallback_reason }}</p>
         {% else %}
