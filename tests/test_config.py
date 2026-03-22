@@ -1,8 +1,8 @@
 from app.config import get_settings
 from app.services.integrations import IntegrationRouter, RecordedEmailGateway, RecordedSlackGateway
 from app.domain.intake import IntakeRequest, IntakeService, JobRunner
+from app.persistence.in_memory import InMemoryIntakeRepository
 from app.services.jobs import RecordedJobDispatcher
-from app.services.repository import InMemoryIntakeRepository
 
 
 def test_get_settings_parses_delivery_configuration(monkeypatch) -> None:

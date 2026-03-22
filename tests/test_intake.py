@@ -1,6 +1,6 @@
 from app.domain.intake import IntakeRequest, IntakeService
+from app.persistence.in_memory import InMemoryIntakeRepository
 from app.services.jobs import RecordedJobDispatcher
-from app.services.repository import InMemoryIntakeRepository
 
 
 def test_intake_persists_records_and_enqueues_job() -> None:

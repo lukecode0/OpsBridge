@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
+from app.persistence.in_memory import InMemoryIntakeRepository
 from app.services.integrations import (
     IntegrationRouter,
     RecordedEmailGateway,
     RecordedSlackGateway,
 )
 from app.services.jobs import RecordedJobDispatcher
-from app.services.repository import InMemoryIntakeRepository
 from app.routes import install_routes
 
 

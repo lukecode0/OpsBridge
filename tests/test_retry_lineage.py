@@ -1,7 +1,7 @@
 from app.domain.intake import IntakeRequest, IntakeService, JobRunner, RetryService
+from app.persistence.in_memory import InMemoryIntakeRepository
 from app.services.integrations import IntegrationRouter, RecordedEmailGateway, RecordedSlackGateway
 from app.services.jobs import RecordedJobDispatcher
-from app.services.repository import InMemoryIntakeRepository
 
 
 def test_retry_attempt_tracks_previous_attempt_id() -> None:
