@@ -1,0 +1,59 @@
+<section class="dashboard">
+  <article class="metric">
+    <p class="metric-label">Total Requests</p>
+    <p class="metric-value">{{ summary.total_requests }}</p>
+    <p class="metric-note">Inbound requests recorded in this demo session.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Queued</p>
+    <p class="metric-value">{{ summary.queued_requests }}</p>
+    <p class="metric-note">Requests still waiting for processing.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Failed</p>
+    <p class="metric-value">{{ summary.failed_requests }}</p>
+    <p class="metric-note">Requests that currently need attention or retry.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Recovered / Done</p>
+    <p class="metric-value">{{ summary.successful_requests }}</p>
+    <p class="metric-note">Requests whose latest attempt has succeeded.</p>
+  </article>
+</section>
+
+<section class="stage">
+  <article class="stage-card">
+    <h2>What This Console Shows</h2>
+    <p>
+      Intake acceptance, queued work, intentional failure handling, retry lineage, and searchable audit history
+      in a server-rendered admin workflow.
+    </p>
+  </article>
+  <article class="stage-card">
+    <h2>Session Counters</h2>
+    <p>
+      {{ summary.total_attempts }} delivery attempt(s) and {{ summary.total_events }} event(s) recorded so far.
+      {% if summary.active_filters %}Filters are active on the timeline below.{% else %}Showing the full timeline below.{% endif %}
+    </p>
+  </article>
+</section>
+
+<form class="filters" action="/admin/audit" method="get">
+  <input
+    type="search"
+    name="q"
+    value="{{ q }}"
+    placeholder="Search by request id, external id, source, or payload"
+  >
+  <select name="status">
+    <option value="" {% if not status %}selected{% endif %}>All statuses</option>
+    <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+    <option value="succeeded" {% if status == "succeeded" %}selected{% endif %}>Succeeded</option>
+    <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
+  </select>
+  <button class="button" type="submit">Apply Filters</button>
+</form>
+
+<section id="timeline">
+  {% include "admin/_timeline.html" %}
+</section>

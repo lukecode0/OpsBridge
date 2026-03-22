@@ -2,10 +2,17 @@ from typing import Any
 import json
 
 from fastapi import FastAPI, Request
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
-from app.domain.intake import IntakeRequest, IntakeService, JobRunner, RetryService
+from app.domain.intake import (
+    DuplicateRequestIdentifierError,
+    IntakeRequest,
+    IntakeService,
+    JobRunner,
+    RetryService,
+)
 
 
 class IntakePayload(BaseModel):
@@ -22,7 +29,9 @@ def install_routes(app: FastAPI) -> None:
             name="public/intake.html",
             context={
                 "submitted": request.query_params.get("submitted") == "1",
+                "submitted_id": request.query_params.get("submitted_id"),
                 "error": request.query_params.get("error"),
+                "duplicate_id": request.query_params.get("duplicate_id"),
             },
         )
 
@@ -36,13 +45,16 @@ def install_routes(app: FastAPI) -> None:
             repository=request.app.state.intake_repository,
             jobs=request.app.state.job_dispatcher,
         )
-        result = service.submit(
-            IntakeRequest(
-                source=body.source,
-                external_id=body.external_id,
-                payload=body.payload,
+        try:
+            result = service.submit(
+                IntakeRequest(
+                    source=body.source,
+                    external_id=body.external_id,
+                    payload=body.payload,
+                )
             )
-        )
+        except DuplicateRequestIdentifierError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         return {
             "request_id": result.request.request_id,
             "event_id": result.event.event_id,
@@ -70,14 +82,21 @@ def install_routes(app: FastAPI) -> None:
             repository=request.app.state.intake_repository,
             jobs=request.app.state.job_dispatcher,
         )
-        service.submit(
-            IntakeRequest(
-                source=str(form.get("source") or ""),
-                external_id=str(form.get("external_id") or ""),
-                payload=payload,
+        external_id = str(form.get("external_id") or "")
+        try:
+            service.submit(
+                IntakeRequest(
+                    source=str(form.get("source") or ""),
+                    external_id=external_id,
+                    payload=payload,
+                )
             )
-        )
-        return RedirectResponse(url="/?submitted=1", status_code=303)
+        except DuplicateRequestIdentifierError:
+            return RedirectResponse(
+                url=f"/?error=duplicate-id&duplicate_id={external_id}",
+                status_code=303,
+            )
+        return RedirectResponse(url=f"/?submitted=1&submitted_id={external_id}", status_code=303)
 
     @app.post("/admin/jobs/process")
     def process_jobs(request: Request):
@@ -93,7 +112,7 @@ def install_routes(app: FastAPI) -> None:
         context = _build_audit_context(request)
         return request.app.state.templates.TemplateResponse(
             request=request,
-            name="admin/_timeline.html",
+            name="admin/_audit_content.html",
             context=context,
         )
 
@@ -109,7 +128,7 @@ def install_routes(app: FastAPI) -> None:
             context = _build_audit_context(request)
             return request.app.state.templates.TemplateResponse(
                 request=request,
-                name="admin/_timeline.html",
+                name="admin/_audit_content.html",
                 context=context,
             )
 
@@ -129,7 +148,7 @@ def install_routes(app: FastAPI) -> None:
         context = _build_audit_context(request)
         return request.app.state.templates.TemplateResponse(
             request=request,
-            name="admin/_timeline.html",
+            name="admin/_audit_content.html",
             context=context,
         )
 

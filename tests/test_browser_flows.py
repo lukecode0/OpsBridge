@@ -29,7 +29,7 @@ def test_browser_submission_redirects_and_shows_admin_entry() -> None:
     )
 
     assert response.status_code == 200
-    assert "Request accepted." in response.text
+    assert "Request browser-1 accepted." in response.text
 
     audit = client.get("/admin/audit")
 
@@ -75,6 +75,37 @@ def test_browser_admin_actions_work_without_htmx() -> None:
     assert processed_retry.status_code == 200
     assert "latest status: succeeded" in processed_retry.text
     assert "attempt 2 is succeeded" in processed_retry.text
+
+
+def test_browser_rejects_duplicate_request_identifier() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    first = client.post(
+        "/intake",
+        data={
+            "source": "web-form",
+            "external_id": "duplicate-1",
+            "message": "First request",
+            "metadata_json": "{}",
+        },
+        follow_redirects=True,
+    )
+    second = client.post(
+        "/intake",
+        data={
+            "source": "web-form",
+            "external_id": "duplicate-1",
+            "message": "Second request",
+            "metadata_json": "{}",
+        },
+        follow_redirects=True,
+    )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert "identifier is already in use" in second.text
+    assert len(app.state.intake_repository.requests) == 1
 
 
 def test_admin_audit_supports_search_and_status_filters() -> None:

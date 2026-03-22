@@ -59,6 +59,10 @@ class IntakeResult:
     delivery_attempt: DeliveryAttempt
 
 
+class DuplicateRequestIdentifierError(ValueError):
+    pass
+
+
 class IntakeRepository(Protocol):
     def save_request(self, request: StoredRequest) -> None:
         ...
@@ -84,6 +88,9 @@ class IntakeRepository(Protocol):
     def list_delivery_attempts_for_request(self, request_id: str) -> list[DeliveryAttempt]:
         ...
 
+    def request_identifier_in_use(self, identifier: str) -> bool:
+        ...
+
 
 class IntakeService:
     def __init__(self, repository: IntakeRepository, jobs: JobDispatcher) -> None:
@@ -92,6 +99,10 @@ class IntakeService:
 
     def submit(self, request: IntakeRequest) -> IntakeResult:
         normalized = self._normalize(request)
+        if self.repository.request_identifier_in_use(normalized["external_id"]):
+            raise DuplicateRequestIdentifierError(
+                f"Request identifier already exists: {normalized['external_id']}"
+            )
         now = datetime.now(UTC)
         stored_request = StoredRequest(
             request_id=f"req_{uuid4().hex[:12]}",

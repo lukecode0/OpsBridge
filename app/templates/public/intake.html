@@ -180,13 +180,19 @@
 
           {% if submitted %}
             <div class="notice success">
-              Request accepted. Open the admin timeline to inspect and process it.
+              Request {{ submitted_id }} accepted. Open the admin timeline to inspect and process it.
             </div>
           {% endif %}
 
           {% if error == "invalid-json" %}
             <div class="notice error">
               Metadata JSON could not be parsed. Please correct it and try again.
+            </div>
+          {% endif %}
+
+          {% if error == "duplicate-id" %}
+            <div class="notice error">
+              Request {{ duplicate_id }} was not accepted because that identifier is already in use.
             </div>
           {% endif %}
         </section>

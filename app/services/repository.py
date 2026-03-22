@@ -55,3 +55,9 @@ class InMemoryIntakeRepository:
         return [
             attempt for attempt in self.delivery_attempts if attempt.request_id == request_id
         ]
+
+    def request_identifier_in_use(self, identifier: str) -> bool:
+        return any(
+            request.external_id == identifier or request.request_id == identifier
+            for request in self.requests
+        )

@@ -42,3 +42,28 @@ def test_api_intake_persists_records_and_enqueues_job() -> None:
     assert app.state.job_dispatcher.calls == [
         ("process_intake", {"request_id": repository.requests[0].request_id})
     ]
+
+
+def test_api_intake_rejects_duplicate_identifier() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    client.post(
+        "/api/intake",
+        json={
+            "source": "Slack",
+            "external_id": "dup-1",
+            "payload": {"message": "hello"},
+        },
+    )
+    response = client.post(
+        "/api/intake",
+        json={
+            "source": "Slack",
+            "external_id": "dup-1",
+            "payload": {"message": "again"},
+        },
+    )
+
+    assert response.status_code == 409
+    assert "already exists" in response.json()["detail"]
