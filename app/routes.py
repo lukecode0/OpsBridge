@@ -41,6 +41,12 @@ GUIDED_DEMO_SAMPLES: dict[str, dict[str, Any]] = {
     },
 }
 
+SHOWCASE_SEED_SAMPLES: tuple[str, ...] = (
+    "normal-email",
+    "fail-once-slack",
+    "priority-slack",
+)
+
 
 class IntakePayload(BaseModel):
     source: str
@@ -157,6 +163,17 @@ def install_routes(app: FastAPI) -> None:
             )
         )
         return RedirectResponse(url=f"/?submitted=1&submitted_id={external_id}", status_code=303)
+
+    @app.post("/admin/demo/reset")
+    def reset_demo_state(request: Request):
+        _reset_demo_state(request)
+        return RedirectResponse(url="/admin/audit?demo_reset=1", status_code=303)
+
+    @app.post("/admin/demo/seed")
+    def seed_demo_state(request: Request):
+        _reset_demo_state(request)
+        _seed_showcase_requests(request)
+        return RedirectResponse(url="/admin/audit?demo_seeded=1", status_code=303)
 
     @app.post("/admin/jobs/process")
     def process_jobs(request: Request):
@@ -348,7 +365,14 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
         active_filters=bool(query or status),
     )
 
-    return {"entries": entries, "q": query, "status": status, "summary": summary}
+    return {
+        "entries": entries,
+        "q": query,
+        "status": status,
+        "summary": summary,
+        "demo_seeded": request.query_params.get("demo_seeded") == "1",
+        "demo_reset": request.query_params.get("demo_reset") == "1",
+    }
 
 
 def _build_request_detail_context(request: Request, request_id: str) -> dict[str, Any]:
@@ -371,6 +395,33 @@ def _build_demo_external_id(existing_requests: list[Any], sample_id: str) -> str
     prefix = sample_id.replace("-", "_")
     sample_count = sum(1 for request in existing_requests if request.external_id.startswith(prefix))
     return f"{prefix}_{sample_count + 1:03d}"
+
+
+def _reset_demo_state(request: Request) -> None:
+    request.app.state.intake_repository.reset()
+    request.app.state.job_dispatcher.reset()
+    request.app.state.delivery_gateway.reset()
+
+
+def _seed_showcase_requests(request: Request) -> None:
+    repository = request.app.state.intake_repository
+    service = IntakeService(
+        repository=repository,
+        jobs=request.app.state.job_dispatcher,
+    )
+    for sample_id in SHOWCASE_SEED_SAMPLES:
+        sample = GUIDED_DEMO_SAMPLES[sample_id]
+        service.submit(
+            IntakeRequest(
+                source=sample["source"],
+                external_id=_build_demo_external_id(repository.list_requests(), sample_id),
+                payload={
+                    "message": sample["message"],
+                    "channel": sample["channel"],
+                    **sample["metadata"],
+                },
+            )
+        )
 
 
 def _build_system_context(request: Request) -> dict[str, Any]:

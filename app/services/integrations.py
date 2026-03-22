@@ -32,6 +32,9 @@ class RecordedEmailGateway:
             delivery_id=f"email_{attempt.attempt_id}",
         )
 
+    def reset(self) -> None:
+        self.calls.clear()
+
 
 @dataclass
 class RecordedSlackGateway:
@@ -46,6 +49,9 @@ class RecordedSlackGateway:
             provider=self.provider_name,
             delivery_id=f"slack_{attempt.attempt_id}",
         )
+
+    def reset(self) -> None:
+        self.calls.clear()
 
 
 @dataclass
@@ -63,3 +69,7 @@ class IntegrationRouter:
         if channel == "slack":
             return self.slack_gateway.send(request, attempt)
         return self.email_gateway.send(request, attempt)
+
+    def reset(self) -> None:
+        self.email_gateway.reset()
+        self.slack_gateway.reset()

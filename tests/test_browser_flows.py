@@ -165,3 +165,26 @@ def test_admin_audit_supports_search_and_status_filters() -> None:
     assert searched.status_code == 200
     assert "external_id: find-me" in searched.text
     assert "external_id: fail-me" not in searched.text
+
+
+def test_admin_can_seed_and_reset_showcase_demo() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    seeded = client.post("/admin/demo/seed", follow_redirects=True)
+
+    assert seeded.status_code == 200
+    assert "Showcase demo data has been seeded" in seeded.text
+    assert "normal_email_001" in seeded.text
+    assert "fail_once_slack_001" in seeded.text
+    assert len(app.state.intake_repository.requests) == 3
+    assert len(app.state.job_dispatcher.queued_jobs) == 3
+
+    reset = client.post("/admin/demo/reset", follow_redirects=True)
+
+    assert reset.status_code == 200
+    assert "Demo state has been reset" in reset.text
+    assert len(app.state.intake_repository.requests) == 0
+    assert len(app.state.intake_repository.events) == 0
+    assert len(app.state.intake_repository.delivery_attempts) == 0
+    assert len(app.state.job_dispatcher.queued_jobs) == 0

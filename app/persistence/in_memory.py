@@ -61,3 +61,8 @@ class InMemoryIntakeRepository:
             request.external_id == identifier or request.request_id == identifier
             for request in self.requests
         )
+
+    def reset(self) -> None:
+        self.requests.clear()
+        self.events.clear()
+        self.delivery_attempts.clear()

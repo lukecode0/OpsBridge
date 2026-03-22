@@ -15,3 +15,7 @@ class RecordedJobDispatcher:
         if not self.queued_jobs:
             return None
         return self.queued_jobs.pop(0)
+
+    def reset(self) -> None:
+        self.calls.clear()
+        self.queued_jobs.clear()
