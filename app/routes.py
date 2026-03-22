@@ -1,4 +1,5 @@
 from typing import Any
+import json
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
@@ -14,6 +15,17 @@ class IntakePayload(BaseModel):
 
 
 def install_routes(app: FastAPI) -> None:
+    @app.get("/")
+    def public_intake(request: Request):
+        return request.app.state.templates.TemplateResponse(
+            request=request,
+            name="public/intake.html",
+            context={
+                "submitted": request.query_params.get("submitted") == "1",
+                "error": request.query_params.get("error"),
+            },
+        )
+
     @app.get("/health")
     def health() -> dict[str, bool]:
         return {"ok": True}
@@ -38,6 +50,35 @@ def install_routes(app: FastAPI) -> None:
             "status": result.delivery_attempt.status,
         }
 
+    @app.post("/intake")
+    async def submit_public_intake(request: Request):
+        form = await request.form()
+        payload = {"message": (form.get("message") or "").strip()}
+        force_failure = form.get("force_failure")
+
+        metadata_raw = (form.get("metadata_json") or "").strip()
+        if metadata_raw:
+            try:
+                payload.update(json.loads(metadata_raw))
+            except json.JSONDecodeError:
+                return RedirectResponse(url="/?error=invalid-json", status_code=303)
+
+        if force_failure:
+            payload["opsbridge_outcome"] = "fail"
+
+        service = IntakeService(
+            repository=request.app.state.intake_repository,
+            jobs=request.app.state.job_dispatcher,
+        )
+        service.submit(
+            IntakeRequest(
+                source=str(form.get("source") or ""),
+                external_id=str(form.get("external_id") or ""),
+                payload=payload,
+            )
+        )
+        return RedirectResponse(url="/?submitted=1", status_code=303)
+
     @app.post("/admin/jobs/process")
     def process_jobs(request: Request):
         runner = JobRunner(
@@ -45,6 +86,10 @@ def install_routes(app: FastAPI) -> None:
             jobs=request.app.state.job_dispatcher,
         )
         runner.process_all()
+
+        if request.headers.get("hx-request") != "true":
+            return RedirectResponse(url="/admin/audit", status_code=303)
+
         context = _build_audit_context(request)
         return request.app.state.templates.TemplateResponse(
             request=request,

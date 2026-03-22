@@ -65,10 +65,14 @@
         display: flex;
         gap: 0.75rem;
         align-items: center;
+        flex-wrap: wrap;
         margin: 1.25rem 0 2rem;
       }
 
       .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         border: 0;
         border-radius: 999px;
         background: var(--accent);
@@ -76,6 +80,7 @@
         padding: 0.8rem 1.1rem;
         font: inherit;
         cursor: pointer;
+        text-decoration: none;
       }
 
       .hint {
@@ -91,27 +96,34 @@
         <h1>Audit Timeline</h1>
         <p class="lede">
           Review inbound requests, the events they created, and the queued delivery attempts.
-          This page is server-rendered and can refresh just the timeline via HTMX.
+          This page is server-rendered and works as normal HTML forms, with HTMX used only as a progressive enhancement.
         </p>
       </section>
 
       <section class="actions">
-        <button
-          class="button"
-          hx-post="/admin/jobs/process"
-          hx-target="#timeline"
-          hx-swap="innerHTML"
-        >
-          Run Queued Jobs
-        </button>
-        <button
-          class="button"
-          hx-get="/admin/audit/entries"
-          hx-target="#timeline"
-          hx-swap="innerHTML"
-        >
-          Refresh Timeline
-        </button>
+        <form action="/admin/jobs/process" method="post">
+          <button
+            class="button"
+            hx-post="/admin/jobs/process"
+            hx-target="#timeline"
+            hx-swap="innerHTML"
+            type="submit"
+          >
+            Run Queued Jobs
+          </button>
+        </form>
+        <form action="/admin/audit" method="get">
+          <button
+            class="button"
+            hx-get="/admin/audit/entries"
+            hx-target="#timeline"
+            hx-swap="innerHTML"
+            type="submit"
+          >
+            Refresh Timeline
+          </button>
+        </form>
+        <a class="button" href="/">Open Public Intake</a>
         <span class="hint">Future replay and retry controls will live alongside these records.</span>
       </section>
 

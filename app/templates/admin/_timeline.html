@@ -106,12 +106,17 @@
               {% if attempt.error_message %}
                 with {{ attempt.error_message }}
               {% endif %}
+              {% if attempt.previous_attempt_id %}
+                from {{ attempt.previous_attempt_id }}
+              {% endif %}
             </li>
           {% endfor %}
         </ul>
 
         {% if entry.latest_attempt.status == "failed" %}
           <form
+            action="/admin/delivery-attempts/{{ entry.latest_attempt.attempt_id }}/retry"
+            method="post"
             hx-post="/admin/delivery-attempts/{{ entry.latest_attempt.attempt_id }}/retry"
             hx-target="#timeline"
             hx-swap="innerHTML"

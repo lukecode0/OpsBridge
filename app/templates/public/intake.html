@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpsBridge Intake</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1d2742;
+        --muted: #5f6a7d;
+        --line: #d8dee8;
+        --paper: #fffefa;
+        --accent: #0d6b5f;
+        --accent-2: #d96c06;
+        --success: #dff5ea;
+        --danger: #fde7df;
+        --bg: radial-gradient(circle at top left, #f7efe4 0%, #eef4f7 46%, #ffffff 100%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+
+      main {
+        width: min(1080px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 2rem 0 4rem;
+      }
+
+      .shell {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      @media (min-width: 900px) {
+        .shell {
+          grid-template-columns: 1.15fr 0.85fr;
+          align-items: start;
+        }
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        padding: 1.4rem;
+        box-shadow: 0 22px 50px rgba(29, 39, 66, 0.08);
+      }
+
+      .eyebrow {
+        margin: 0 0 0.45rem;
+        font-size: 0.82rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0 0 0.8rem;
+        font-size: clamp(2.3rem, 6vw, 4rem);
+        line-height: 0.92;
+      }
+
+      .lede {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 1.02rem;
+      }
+
+      .notice {
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 16px;
+        font-size: 0.96rem;
+      }
+
+      .notice.success {
+        background: var(--success);
+      }
+
+      .notice.error {
+        background: var(--danger);
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      label {
+        display: grid;
+        gap: 0.45rem;
+        font-size: 0.95rem;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 0.85rem 0.95rem;
+        font: inherit;
+        background: #fff;
+      }
+
+      textarea {
+        min-height: 8rem;
+        resize: vertical;
+      }
+
+      .checkbox {
+        display: flex;
+        gap: 0.7rem;
+        align-items: center;
+      }
+
+      .checkbox input {
+        width: auto;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .button,
+      .button-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.85rem 1.15rem;
+        font: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .button {
+        border: 0;
+        background: var(--accent);
+        color: white;
+      }
+
+      .button-secondary {
+        border: 1px solid var(--line);
+        color: var(--ink);
+        background: transparent;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 1.2rem;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="shell">
+        <section class="panel">
+          <p class="eyebrow">OpsBridge Demo</p>
+          <h1>Submit an inbound request.</h1>
+          <p class="lede">
+            This simulates the public-facing side of OpsBridge. Submit a request here, then visit the
+            admin timeline to process it, inspect the audit trail, and retry intentional failures.
+          </p>
+
+          {% if submitted %}
+            <div class="notice success">
+              Request accepted. Open the admin timeline to inspect and process it.
+            </div>
+          {% endif %}
+
+          {% if error == "invalid-json" %}
+            <div class="notice error">
+              Metadata JSON could not be parsed. Please correct it and try again.
+            </div>
+          {% endif %}
+        </section>
+
+        <section class="panel">
+          <form action="/intake" method="post" class="form-grid">
+            <label>
+              Source
+              <input type="text" name="source" value="web-form" required>
+            </label>
+
+            <label>
+              External ID
+              <input type="text" name="external_id" value="demo-001" required>
+            </label>
+
+            <label>
+              Message
+              <textarea name="message" required>Browser-submitted demo request.</textarea>
+            </label>
+
+            <label>
+              Extra metadata as JSON
+              <textarea name="metadata_json">{"priority": "normal"}</textarea>
+            </label>
+
+            <label class="checkbox">
+              <input type="checkbox" name="force_failure" value="1">
+              Intentionally fail this request so the retry flow can be demonstrated
+            </label>
+
+            <div class="actions">
+              <button class="button" type="submit">Submit Request</button>
+              <a class="button-secondary" href="/admin/audit">Open Admin Timeline</a>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-top: 1.5rem;">
+        <p class="eyebrow">Demo Path</p>
+        <ul>
+          <li>Submit one normal request and watch it move from pending to succeeded.</li>
+          <li>Submit one intentionally failing request and use retry from the admin timeline.</li>
+          <li>Everything here works as normal HTML pages and forms, even if HTMX does not load.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
