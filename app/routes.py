@@ -138,9 +138,14 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
     repository = request.app.state.intake_repository
     query = request.query_params.get("q", "").strip().lower()
     status = request.query_params.get("status", "").strip().lower()
+    all_requests = repository.list_requests()
+    all_latest_attempts = [
+        repository.get_latest_attempt_for_request(stored_request.request_id)
+        for stored_request in all_requests
+    ]
     entries = []
 
-    for stored_request in repository.list_requests():
+    for stored_request in all_requests:
         latest_attempt = repository.get_latest_attempt_for_request(stored_request.request_id)
         if status and latest_attempt.status != status:
             continue
@@ -167,4 +172,20 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
             }
         )
 
-    return {"entries": entries, "q": query, "status": status}
+    summary = {
+        "total_requests": len(all_requests),
+        "queued_requests": len(
+            [attempt for attempt in all_latest_attempts if attempt.status == "pending"]
+        ),
+        "failed_requests": len(
+            [attempt for attempt in all_latest_attempts if attempt.status == "failed"]
+        ),
+        "successful_requests": len(
+            [attempt for attempt in all_latest_attempts if attempt.status == "succeeded"]
+        ),
+        "total_attempts": len(repository.delivery_attempts),
+        "total_events": len(repository.events),
+        "active_filters": bool(query or status),
+    }
+
+    return {"entries": entries, "q": query, "status": status, "summary": summary}

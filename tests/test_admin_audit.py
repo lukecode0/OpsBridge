@@ -20,6 +20,8 @@ def test_admin_audit_page_renders_timeline() -> None:
 
     assert response.status_code == 200
     assert "Audit Timeline" in response.text
+    assert "Total Requests" in response.text
+    assert "Queued" in response.text
     assert "req_" in response.text
     assert "source: webhook" in response.text
     assert "intake.received" in response.text

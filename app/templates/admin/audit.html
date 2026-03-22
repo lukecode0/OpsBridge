@@ -110,6 +110,80 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .dashboard {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 1.5rem;
+      }
+
+      .metric {
+        background: rgba(255, 255, 255, 0.84);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 16px 34px rgba(22, 33, 62, 0.06);
+      }
+
+      .metric-label {
+        margin: 0 0 0.35rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .metric-value {
+        margin: 0;
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .metric-note {
+        margin: 0.45rem 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .stage {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1.2fr 0.8fr;
+        margin-bottom: 1.5rem;
+      }
+
+      .stage-card {
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 1rem 1.1rem;
+      }
+
+      .stage-card h2 {
+        margin: 0 0 0.4rem;
+        font-size: 1.05rem;
+      }
+
+      .stage-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      @media (max-width: 900px) {
+        .dashboard,
+        .stage {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .dashboard,
+        .stage {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -148,6 +222,46 @@
         </form>
         <a class="button" href="/">Open Public Intake</a>
         <span class="hint">Future replay and retry controls will live alongside these records.</span>
+      </section>
+
+      <section class="dashboard">
+        <article class="metric">
+          <p class="metric-label">Total Requests</p>
+          <p class="metric-value">{{ summary.total_requests }}</p>
+          <p class="metric-note">Inbound requests recorded in this demo session.</p>
+        </article>
+        <article class="metric">
+          <p class="metric-label">Queued</p>
+          <p class="metric-value">{{ summary.queued_requests }}</p>
+          <p class="metric-note">Requests still waiting for processing.</p>
+        </article>
+        <article class="metric">
+          <p class="metric-label">Failed</p>
+          <p class="metric-value">{{ summary.failed_requests }}</p>
+          <p class="metric-note">Requests that currently need attention or retry.</p>
+        </article>
+        <article class="metric">
+          <p class="metric-label">Recovered / Done</p>
+          <p class="metric-value">{{ summary.successful_requests }}</p>
+          <p class="metric-note">Requests whose latest attempt has succeeded.</p>
+        </article>
+      </section>
+
+      <section class="stage">
+        <article class="stage-card">
+          <h2>What This Console Shows</h2>
+          <p>
+            Intake acceptance, queued work, intentional failure handling, retry lineage, and searchable audit history
+            in a server-rendered admin workflow.
+          </p>
+        </article>
+        <article class="stage-card">
+          <h2>Session Counters</h2>
+          <p>
+            {{ summary.total_attempts }} delivery attempt(s) and {{ summary.total_events }} event(s) recorded so far.
+            {% if summary.active_filters %}Filters are active on the timeline below.{% else %}Showing the full timeline below.{% endif %}
+          </p>
+        </article>
       </section>
 
       <form class="filters" action="/admin/audit" method="get">
