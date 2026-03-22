@@ -1,9 +1,4 @@
-from fastapi import FastAPI
+from app.factory import create_app
 
 
-app = FastAPI(title="OpsBridge")
-
-
-@app.get("/health")
-def health() -> dict[str, bool]:
-    return {"ok": True}
+app = create_app()
