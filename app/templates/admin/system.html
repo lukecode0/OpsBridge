@@ -1,154 +1,37 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OpsBridge System Settings</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --ink: #16213e;
-        --muted: #5b6475;
-        --line: #d9dfeb;
-        --panel: #ffffff;
-        --accent: #d96c06;
-        --accent-soft: #ffe5cc;
-        --bg: linear-gradient(135deg, #f7f2e8 0%, #e9f0f7 100%);
-      }
+{% extends "admin/base.html" %}
 
-      * {
-        box-sizing: border-box;
-      }
+{% block title %}OpsBridge System Settings{% endblock %}
 
-      body {
-        margin: 0;
-        font-family: Georgia, "Times New Roman", serif;
-        color: var(--ink);
-        background: var(--bg);
-      }
+{% block extra_styles %}
+  .lede {
+    max-width: 48rem;
+  }
 
-      main {
-        width: min(980px, calc(100% - 2rem));
-        margin: 0 auto;
-        padding: 2.5rem 0 4rem;
-      }
+  .grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 1.25rem;
+  }
 
-      .admin-nav {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-      }
+  .panel p {
+    margin: 0.5rem 0 0;
+    color: var(--muted);
+  }
 
-      .nav-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        padding: 0.7rem 1rem;
-        color: var(--ink);
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.7);
-      }
+  .pill.off {
+    background: #eceff5;
+  }
 
-      .nav-link.active {
-        background: var(--accent-soft);
-        border-color: #efbf87;
-      }
+  @media (max-width: 760px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+{% endblock %}
 
-      .eyebrow {
-        margin: 0 0 0.4rem;
-        color: var(--accent);
-        font-size: 0.85rem;
-        font-weight: bold;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      h1, h2 {
-        margin: 0;
-      }
-
-      .lede {
-        max-width: 48rem;
-        color: var(--muted);
-        line-height: 1.6;
-      }
-
-      .grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-top: 1.25rem;
-      }
-
-      .panel {
-        background: rgba(255, 255, 255, 0.88);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 1.25rem;
-        box-shadow: 0 18px 40px rgba(22, 33, 62, 0.08);
-      }
-
-      .panel p {
-        margin: 0.5rem 0 0;
-        color: var(--muted);
-      }
-
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        padding: 0.3rem 0.75rem;
-        background: var(--accent-soft);
-        color: var(--ink);
-        font-size: 0.92rem;
-      }
-
-      .pill.off {
-        background: #eceff5;
-      }
-
-      .table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 0.75rem;
-      }
-
-      .table th,
-      .table td {
-        padding: 0.8rem 0;
-        border-bottom: 1px solid var(--line);
-        text-align: left;
-        vertical-align: top;
-      }
-
-      .table th {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-      }
-
-      .mono {
-        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
-        font-size: 0.92rem;
-      }
-
-      @media (max-width: 760px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      {% include "admin/_nav.html" %}
-
-      <section class="panel">
+{% block content %}
+  <section class="panel page-header">
         <p class="eyebrow">System View</p>
         <h1>System Settings / Environment Info</h1>
         <p class="lede">
@@ -209,6 +92,4 @@
           </tbody>
         </table>
       </section>
-    </main>
-  </body>
-</html>
+{% endblock %}

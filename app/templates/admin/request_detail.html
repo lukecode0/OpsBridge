@@ -1,176 +1,71 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OpsBridge Request Detail</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --ink: #16213e;
-        --muted: #5b6475;
-        --line: #d9dfeb;
-        --accent: #d96c06;
-        --accent-soft: #ffe5cc;
-        --bg: linear-gradient(135deg, #f7f2e8 0%, #e9f0f7 100%);
-      }
+{% extends "admin/base.html" %}
 
-      * {
-        box-sizing: border-box;
-      }
+{% block title %}OpsBridge Request Detail{% endblock %}
 
-      body {
-        margin: 0;
-        font-family: Georgia, "Times New Roman", serif;
-        color: var(--ink);
-        background: var(--bg);
-      }
+{% block extra_styles %}
+  .actions,
+  .meta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
 
-      main {
-        width: min(1000px, calc(100% - 2rem));
-        margin: 0 auto;
-        padding: 2.5rem 0 4rem;
-      }
+  .pill.status-pending {
+    background: #fff2cf;
+    color: #7d5600;
+  }
 
-      .admin-nav {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-      }
+  .pill.status-succeeded {
+    background: #dff4e7;
+    color: #1d6b3d;
+  }
 
-      .nav-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        padding: 0.7rem 1rem;
-        color: var(--ink);
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.7);
-      }
+  .pill.status-failed {
+    background: #fde2df;
+    color: #8a2d25;
+  }
 
-      .nav-link.active {
-        background: var(--accent-soft);
-        border-color: #efbf87;
-      }
+  .timeline {
+    display: grid;
+    gap: 0.85rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-      .actions,
-      .meta {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: center;
-      }
+  .timeline li {
+    border-left: 3px solid var(--line);
+    padding-left: 0.9rem;
+  }
 
-      .button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        border-radius: 999px;
-        background: var(--accent);
-        color: white;
-        padding: 0.8rem 1.1rem;
-        font: inherit;
-        cursor: pointer;
-        text-decoration: none;
-      }
+  pre {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.9rem;
+    overflow-x: auto;
+    border-radius: 14px;
+    background: #fff8ef;
+    border: 1px solid #f1dcc0;
+    font-size: 0.92rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 
-      .panel {
-        margin-top: 1.25rem;
-        background: rgba(255, 255, 255, 0.88);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 1.25rem;
-        box-shadow: 0 18px 40px rgba(22, 33, 62, 0.08);
-        min-width: 0;
-      }
+  .split {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
 
-      .eyebrow {
-        margin: 0 0 0.4rem;
-        color: var(--accent);
-        font-size: 0.85rem;
-        font-weight: bold;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
+  .split > * {
+    min-width: 0;
+  }
+{% endblock %}
 
-      h1, h2 {
-        margin: 0;
-      }
-
-      .lede {
-        color: var(--muted);
-        line-height: 1.6;
-      }
-
-      .pill {
-        border-radius: 999px;
-        padding: 0.25rem 0.7rem;
-        background: var(--accent-soft);
-        color: var(--ink);
-        font-size: 0.92rem;
-      }
-
-      .pill.status-pending {
-        background: #fff2cf;
-        color: #7d5600;
-      }
-
-      .pill.status-succeeded {
-        background: #dff4e7;
-        color: #1d6b3d;
-      }
-
-      .pill.status-failed {
-        background: #fde2df;
-        color: #8a2d25;
-      }
-
-      .timeline {
-        display: grid;
-        gap: 0.85rem;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .timeline li {
-        border-left: 3px solid var(--line);
-        padding-left: 0.9rem;
-      }
-
-      pre {
-        display: block;
-        width: 100%;
-        margin: 0;
-        padding: 0.9rem;
-        overflow-x: auto;
-        border-radius: 14px;
-        background: #fff8ef;
-        border: 1px solid #f1dcc0;
-        font-size: 0.92rem;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-      }
-
-      .split {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-      }
-
-      .split > * {
-        min-width: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      {% include "admin/_nav.html" %}
-      <div class="actions">
+{% block content %}
+  <div class="actions page-header">
         <a class="button" href="/admin/audit">Back To Audit</a>
         <form action="/admin/jobs/process?request_id={{ request_entry.request.request_id }}" method="post">
           <button class="button" type="submit">Run Queued Jobs</button>
@@ -257,6 +152,4 @@
           {% endfor %}
         </ul>
       </section>
-    </main>
-  </body>
-</html>
+{% endblock %}
