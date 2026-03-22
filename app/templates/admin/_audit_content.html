@@ -38,6 +38,29 @@
   </article>
 </section>
 
+<section class="dashboard" style="margin-top: 0;">
+  <article class="metric">
+    <p class="metric-label">Ever Failed</p>
+    <p class="metric-value">{{ summary.ever_failed_requests }}</p>
+    <p class="metric-note">Requests that have failed at least once in this session.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Retried</p>
+    <p class="metric-value">{{ summary.retried_requests }}</p>
+    <p class="metric-note">Requests with more than one delivery attempt.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Recovered</p>
+    <p class="metric-value">{{ summary.recovered_after_retry_requests }}</p>
+    <p class="metric-note">Requests that failed and later succeeded after retry.</p>
+  </article>
+  <article class="metric">
+    <p class="metric-label">Events Logged</p>
+    <p class="metric-value">{{ summary.total_events }}</p>
+    <p class="metric-note">Audit events captured across the current session.</p>
+  </article>
+</section>
+
 <form class="filters" action="/admin/audit" method="get">
   <input
     type="search"

@@ -136,6 +136,7 @@ def test_admin_audit_supports_search_and_status_filters() -> None:
     failed_only = client.get("/admin/audit?status=failed")
     assert failed_only.status_code == 200
     assert "Filters are active on the timeline below." in failed_only.text
+    assert "Ever Failed" in failed_only.text
     assert "external_id: fail-me" in failed_only.text
     assert "external_id: find-me" not in failed_only.text
 

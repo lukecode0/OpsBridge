@@ -26,6 +26,8 @@ def test_request_detail_page_renders_with_lineage_and_payloads() -> None:
 
     assert response.status_code == 200
     assert "Request Detail" in response.text
+    assert "Audit Timeline" in response.text
+    assert "Public Intake / Homepage" in response.text
     assert "Retry Latest Failed Attempt" not in response.text
     assert "event_type" not in response.text
     assert "delivery.failed" in response.text

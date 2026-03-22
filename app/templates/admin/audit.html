@@ -39,6 +39,30 @@
         margin-bottom: 1.5rem;
       }
 
+      .admin-nav {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .nav-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        padding: 0.7rem 1rem;
+        color: var(--ink);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .nav-link.active {
+        background: var(--accent-soft);
+        border-color: #efbf87;
+      }
+
       .eyebrow {
         margin: 0 0 0.4rem;
         color: var(--accent);
@@ -188,6 +212,7 @@
   </head>
   <body>
     <main>
+      {% include "admin/_nav.html" %}
       <section class="hero">
         <p class="eyebrow">Admin Console</p>
         <h1>Audit Timeline</h1>
@@ -220,7 +245,6 @@
             Refresh Timeline
           </button>
         </form>
-        <a class="button" href="/">Open Public Intake / Homepage</a>
         <span class="hint">Future replay and retry controls will live alongside these records.</span>
       </section>
       <section id="audit-content">

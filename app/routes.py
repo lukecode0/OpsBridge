@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from app.domain.admin import AuditEntry, QueueHealthSummary
 from app.domain.intake import (
     DuplicateRequestIdentifierError,
     IntakeRequest,
@@ -143,6 +144,7 @@ def install_routes(app: FastAPI) -> None:
     @app.get("/admin/audit")
     def admin_audit(request: Request):
         context = _build_audit_context(request)
+        context["current_page"] = "audit"
         return request.app.state.templates.TemplateResponse(
             request=request,
             name="admin/audit.html",
@@ -161,6 +163,7 @@ def install_routes(app: FastAPI) -> None:
     @app.get("/admin/requests/{request_id}")
     def admin_request_detail(request_id: str, request: Request):
         context = _build_request_detail_context(request, request_id)
+        context["current_page"] = "request_detail"
         return request.app.state.templates.TemplateResponse(
             request=request,
             name="admin/request_detail.html",
@@ -177,7 +180,7 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
         repository.get_latest_attempt_for_request(stored_request.request_id)
         for stored_request in all_requests
     ]
-    entries = []
+    entries: list[AuditEntry] = []
 
     for stored_request in all_requests:
         latest_attempt = repository.get_latest_attempt_for_request(stored_request.request_id)
@@ -196,31 +199,56 @@ def _build_audit_context(request: Request) -> dict[str, Any]:
             continue
 
         entries.append(
-            {
-                "request": stored_request,
-                "events": repository.list_events_for_request(stored_request.request_id),
-                "delivery_attempts": repository.list_delivery_attempts_for_request(
+            AuditEntry(
+                request=stored_request,
+                events=repository.list_events_for_request(stored_request.request_id),
+                delivery_attempts=repository.list_delivery_attempts_for_request(
                     stored_request.request_id
                 ),
-                "latest_attempt": latest_attempt,
-            }
+                latest_attempt=latest_attempt,
+            )
         )
 
-    summary = {
-        "total_requests": len(all_requests),
-        "queued_requests": len(
+    request_attempts = {
+        stored_request.request_id: repository.list_delivery_attempts_for_request(
+            stored_request.request_id
+        )
+        for stored_request in all_requests
+    }
+    summary = QueueHealthSummary(
+        total_requests=len(all_requests),
+        queued_requests=len(
             [attempt for attempt in all_latest_attempts if attempt.status == "pending"]
         ),
-        "failed_requests": len(
+        failed_requests=len(
             [attempt for attempt in all_latest_attempts if attempt.status == "failed"]
         ),
-        "successful_requests": len(
+        successful_requests=len(
             [attempt for attempt in all_latest_attempts if attempt.status == "succeeded"]
         ),
-        "total_attempts": len(repository.delivery_attempts),
-        "total_events": len(repository.events),
-        "active_filters": bool(query or status),
-    }
+        total_attempts=len(repository.delivery_attempts),
+        total_events=len(repository.events),
+        ever_failed_requests=len(
+            [
+                attempts
+                for attempts in request_attempts.values()
+                if any(attempt.status == "failed" for attempt in attempts)
+            ]
+        ),
+        retried_requests=len(
+            [attempts for attempts in request_attempts.values() if len(attempts) > 1]
+        ),
+        recovered_after_retry_requests=len(
+            [
+                attempts
+                for request_id, attempts in request_attempts.items()
+                if len(attempts) > 1
+                and any(attempt.status == "failed" for attempt in attempts)
+                and repository.get_latest_attempt_for_request(request_id).status == "succeeded"
+            ]
+        ),
+        active_filters=bool(query or status),
+    )
 
     return {"entries": entries, "q": query, "status": status, "summary": summary}
 
@@ -232,10 +260,10 @@ def _build_request_detail_context(request: Request, request_id: str) -> dict[str
     attempts = repository.list_delivery_attempts_for_request(request_id)
     latest_attempt = repository.get_latest_attempt_for_request(request_id)
     return {
-        "request_entry": {
-            "request": stored_request,
-            "events": events,
-            "delivery_attempts": attempts,
-            "latest_attempt": latest_attempt,
-        }
+        "request_entry": AuditEntry(
+            request=stored_request,
+            events=events,
+            delivery_attempts=attempts,
+            latest_attempt=latest_attempt,
+        )
     }
