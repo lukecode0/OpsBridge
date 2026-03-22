@@ -217,8 +217,14 @@
             <label>
               Outbound Channel
               <select name="channel">
-                <option value="email" selected>Email</option>
-                <option value="slack">Slack</option>
+                {% for channel in settings.enabled_channels %}
+                  <option
+                    value="{{ channel }}"
+                    {% if channel == settings.default_channel %}selected{% endif %}
+                  >
+                    {{ channel|title }}
+                  </option>
+                {% endfor %}
               </select>
             </label>
 

@@ -26,6 +26,7 @@ class IntakePayload(BaseModel):
 def install_routes(app: FastAPI) -> None:
     @app.get("/")
     def public_intake(request: Request):
+        settings = request.app.state.settings
         return request.app.state.templates.TemplateResponse(
             request=request,
             name="public/intake.html",
@@ -34,6 +35,7 @@ def install_routes(app: FastAPI) -> None:
                 "submitted_id": request.query_params.get("submitted_id"),
                 "error": request.query_params.get("error"),
                 "duplicate_id": request.query_params.get("duplicate_id"),
+                "settings": settings,
             },
         )
 

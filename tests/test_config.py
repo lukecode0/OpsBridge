@@ -1,0 +1,44 @@
+from app.config import get_settings
+from app.services.integrations import IntegrationRouter, RecordedEmailGateway, RecordedSlackGateway
+from app.domain.intake import IntakeRequest, IntakeService, JobRunner
+from app.services.jobs import RecordedJobDispatcher
+from app.services.repository import InMemoryIntakeRepository
+
+
+def test_get_settings_parses_delivery_configuration(monkeypatch) -> None:
+    monkeypatch.setenv("OPSBRIDGE_DELIVERY_MODE", "stub")
+    monkeypatch.setenv("OPSBRIDGE_DEFAULT_CHANNEL", "slack")
+    monkeypatch.setenv("OPSBRIDGE_ENABLED_CHANNELS", "slack")
+
+    settings = get_settings()
+
+    assert settings.delivery_mode == "stub"
+    assert settings.default_channel == "slack"
+    assert settings.enabled_channels == ("slack",)
+
+
+def test_integration_router_falls_back_to_default_channel_when_disabled() -> None:
+    repository = InMemoryIntakeRepository()
+    jobs = RecordedJobDispatcher()
+    gateway = IntegrationRouter(
+        email_gateway=RecordedEmailGateway(provider_name="mock-email"),
+        slack_gateway=RecordedSlackGateway(provider_name="mock-slack"),
+        default_channel="email",
+        enabled_channels=("email",),
+    )
+    service = IntakeService(repository, jobs)
+    result = service.submit(
+        IntakeRequest(
+            source="webhook",
+            external_id="config-fallback-1",
+            payload={"message": "hello", "channel": "slack"},
+        )
+    )
+
+    JobRunner(repository, jobs, gateway).process_all()
+
+    assert gateway.email_gateway.calls == [
+        (result.request.request_id, result.delivery_attempt.attempt_id)
+    ]
+    assert gateway.slack_gateway.calls == []
+    assert repository.events[-1].payload["channel"] == "email"

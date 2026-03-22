@@ -19,8 +19,14 @@ def create_app() -> FastAPI:
     app.state.intake_repository = InMemoryIntakeRepository()
     app.state.job_dispatcher = RecordedJobDispatcher()
     app.state.delivery_gateway = IntegrationRouter(
-        email_gateway=RecordedEmailGateway(),
-        slack_gateway=RecordedSlackGateway(),
+        email_gateway=RecordedEmailGateway(
+            provider_name=f"{settings.delivery_mode}-email"
+        ),
+        slack_gateway=RecordedSlackGateway(
+            provider_name=f"{settings.delivery_mode}-slack"
+        ),
+        default_channel=settings.default_channel,
+        enabled_channels=settings.enabled_channels,
     )
     app.state.templates = Jinja2Templates(directory="app/templates")
     install_routes(app)
