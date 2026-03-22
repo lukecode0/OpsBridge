@@ -36,6 +36,52 @@ Run tests with:
 .venv/bin/pytest
 ```
 
+## Run Modes
+
+OpsBridge supports three practical local modes:
+
+### Default In-Memory Mode
+
+This is the safest browser-demo mode and requires no database setup.
+
+```bash
+.venv/bin/uvicorn app.main:app --reload
+```
+
+### Local SQLite Mode
+
+This uses the SQLAlchemy-backed repository with a local SQLite file.
+
+Install the DB extra once:
+
+```bash
+.venv/bin/pip install -e ".[db]"
+```
+
+Then run:
+
+```bash
+OPSBRIDGE_PERSISTENCE_BACKEND=database \
+OPSBRIDGE_SQLITE_PATH=./opsbridge-dev.db \
+.venv/bin/uvicorn app.main:app --reload
+```
+
+### PostgreSQL Mode
+
+If you already have PostgreSQL running locally, point OpsBridge at it directly.
+
+```bash
+OPSBRIDGE_PERSISTENCE_BACKEND=database \
+OPSBRIDGE_DATABASE_URL=postgresql+psycopg://localhost:5432/opsbridge \
+.venv/bin/uvicorn app.main:app --reload
+```
+
+Notes:
+
+- When `OPSBRIDGE_DATABASE_URL` is set, PostgreSQL takes precedence over SQLite.
+- When `OPSBRIDGE_PERSISTENCE_BACKEND` is not set, the app stays in in-memory mode.
+- If database mode fails during startup, the app falls back to in-memory mode and reports that on `/admin/system`.
+
 ## Browser Demo Walkthrough
 
 The quickest demo path is entirely browser-based:
