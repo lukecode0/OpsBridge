@@ -49,6 +49,7 @@ class DeliveryAttempt:
     completed_at: datetime | None = None
     error_message: str | None = None
     attempt_number: int = 1
+    previous_attempt_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -144,6 +145,7 @@ class RetryService:
             status="pending",
             created_at=datetime.now(UTC),
             attempt_number=previous_attempt.attempt_number + 1,
+            previous_attempt_id=previous_attempt.attempt_id,
         )
         self.repository.save_delivery_attempt(new_attempt)
         self.jobs.enqueue("process_intake", {"request_id": previous_attempt.request_id})
