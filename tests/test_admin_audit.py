@@ -23,7 +23,7 @@ def test_admin_audit_page_renders_timeline() -> None:
     assert "req_" in response.text
     assert "source: webhook" in response.text
     assert "intake.received" in response.text
-    assert "process_intake is pending" in response.text
+    assert "process_intake attempt 1 is pending" in response.text
 
 
 def test_admin_audit_entries_partial_renders_empty_state() -> None:

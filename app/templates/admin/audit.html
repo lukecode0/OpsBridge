@@ -98,6 +98,14 @@
       <section class="actions">
         <button
           class="button"
+          hx-post="/admin/jobs/process"
+          hx-target="#timeline"
+          hx-swap="innerHTML"
+        >
+          Run Queued Jobs
+        </button>
+        <button
+          class="button"
           hx-get="/admin/audit/entries"
           hx-target="#timeline"
           hx-swap="innerHTML"

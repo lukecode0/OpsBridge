@@ -85,6 +85,7 @@
           <span class="pill">external_id: {{ entry.request.external_id }}</span>
           <span class="pill">{{ entry.events|length }} event(s)</span>
           <span class="pill">{{ entry.delivery_attempts|length }} attempt(s)</span>
+          <span class="pill">latest status: {{ entry.latest_attempt.status }}</span>
         </div>
 
         <p class="section-title">Payload</p>
@@ -100,9 +101,25 @@
         <p class="section-title">Delivery Attempts</p>
         <ul>
           {% for attempt in entry.delivery_attempts %}
-            <li>{{ attempt.target }} is {{ attempt.status }} at {{ attempt.created_at.isoformat() }}</li>
+            <li>
+              {{ attempt.target }} attempt {{ attempt.attempt_number }} is {{ attempt.status }} at {{ attempt.created_at.isoformat() }}
+              {% if attempt.error_message %}
+                with {{ attempt.error_message }}
+              {% endif %}
+            </li>
           {% endfor %}
         </ul>
+
+        {% if entry.latest_attempt.status == "failed" %}
+          <form
+            hx-post="/admin/delivery-attempts/{{ entry.latest_attempt.attempt_id }}/retry"
+            hx-target="#timeline"
+            hx-swap="innerHTML"
+            style="margin-top: 1rem;"
+          >
+            <button class="button" type="submit">Retry Failed Attempt</button>
+          </form>
+        {% endif %}
       </article>
     {% endfor %}
   </div>

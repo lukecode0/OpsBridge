@@ -18,6 +18,33 @@ class InMemoryIntakeRepository:
     def save_delivery_attempt(self, attempt: DeliveryAttempt) -> None:
         self.delivery_attempts.append(attempt)
 
+    def get_request(self, request_id: str) -> StoredRequest:
+        for request in self.requests:
+            if request.request_id == request_id:
+                return request
+        raise KeyError(f"Unknown request_id: {request_id}")
+
+    def get_delivery_attempt(self, attempt_id: str) -> DeliveryAttempt:
+        for attempt in self.delivery_attempts:
+            if attempt.attempt_id == attempt_id:
+                return attempt
+        raise KeyError(f"Unknown attempt_id: {attempt_id}")
+
+    def get_latest_attempt_for_request(self, request_id: str) -> DeliveryAttempt:
+        matches = [
+            attempt for attempt in self.delivery_attempts if attempt.request_id == request_id
+        ]
+        if not matches:
+            raise KeyError(f"No attempts for request_id: {request_id}")
+        return matches[-1]
+
+    def update_delivery_attempt(self, attempt: DeliveryAttempt) -> None:
+        for index, existing in enumerate(self.delivery_attempts):
+            if existing.attempt_id == attempt.attempt_id:
+                self.delivery_attempts[index] = attempt
+                return
+        raise KeyError(f"Unknown attempt_id: {attempt.attempt_id}")
+
     def list_requests(self) -> list[StoredRequest]:
         return list(reversed(self.requests))
 
