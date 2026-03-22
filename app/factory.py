@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
 from app.services.jobs import RecordedJobDispatcher
@@ -12,5 +13,6 @@ def create_app() -> FastAPI:
     app.state.settings = settings
     app.state.intake_repository = InMemoryIntakeRepository()
     app.state.job_dispatcher = RecordedJobDispatcher()
+    app.state.templates = Jinja2Templates(directory="app/templates")
     install_routes(app)
     return app

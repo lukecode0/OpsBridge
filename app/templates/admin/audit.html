@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpsBridge Audit</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16213e;
+        --muted: #5b6475;
+        --line: #d9dfeb;
+        --paper: #fffdf8;
+        --panel: #ffffff;
+        --accent: #d96c06;
+        --accent-soft: #ffe5cc;
+        --bg: linear-gradient(135deg, #f7f2e8 0%, #e9f0f7 100%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background: var(--bg);
+      }
+
+      main {
+        width: min(960px, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: 3rem 0 4rem;
+      }
+
+      .hero {
+        margin-bottom: 1.5rem;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.4rem;
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: bold;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 3.4rem);
+        line-height: 0.95;
+      }
+
+      .lede {
+        max-width: 44rem;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin: 1.25rem 0 2rem;
+      }
+
+      .button {
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: white;
+        padding: 0.8rem 1.1rem;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Admin Console</p>
+        <h1>Audit Timeline</h1>
+        <p class="lede">
+          Review inbound requests, the events they created, and the queued delivery attempts.
+          This page is server-rendered and can refresh just the timeline via HTMX.
+        </p>
+      </section>
+
+      <section class="actions">
+        <button
+          class="button"
+          hx-get="/admin/audit/entries"
+          hx-target="#timeline"
+          hx-swap="innerHTML"
+        >
+          Refresh Timeline
+        </button>
+        <span class="hint">Future replay and retry controls will live alongside these records.</span>
+      </section>
+
+      <section id="timeline">
+        {% include "admin/_timeline.html" %}
+      </section>
+    </main>
+  </body>
+</html>
